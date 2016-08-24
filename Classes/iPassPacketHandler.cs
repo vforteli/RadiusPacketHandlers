@@ -204,6 +204,7 @@ namespace Flexinets.Radius
         /// <returns></returns>
         private PacketCode ProxyAuthentication(String usernamedomain, String password)
         {
+            // todo add indefinite password caching?
             // todo these should be injected
             var host = "127.0.0.1";
             var checkIpassPath = @"c:\ipass\roamserver\6.1.0\test\checkipass.bat";

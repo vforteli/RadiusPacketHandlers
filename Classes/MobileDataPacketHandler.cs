@@ -1,8 +1,8 @@
 ﻿using FlexinetsDBEF;
 using log4net;
 using System;
-using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,13 +13,13 @@ namespace Flexinets.Radius
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly ILog _log = LogManager.GetLogger(typeof(MobileDataPacketHandler));
         private readonly NetworkIdProvider _networkIdProvider;
-        private readonly String _disconnectCheckerPath;
+        private readonly RadiusDisconnector _disconnector;
         private readonly WelcomeSender _welcomeSender;
 
 
-        public MobileDataPacketHandler(FlexinetsEntitiesFactory contextFactory, NetworkIdProvider networkIdProvider, WelcomeSender welcomeSender, String disconnectCheckerPath)
+        public MobileDataPacketHandler(FlexinetsEntitiesFactory contextFactory, NetworkIdProvider networkIdProvider, WelcomeSender welcomeSender, RadiusDisconnector disconnector)
         {
-            _disconnectCheckerPath = disconnectCheckerPath;
+            _disconnector = disconnector;
             _welcomeSender = welcomeSender;
             _contextFactory = contextFactory;
             _networkIdProvider = networkIdProvider;
@@ -129,6 +129,7 @@ namespace Flexinets.Radius
             var acctSessionTime = packet.GetAttribute<UInt32>("Acct-Session-Time");
             var acctInputGigawords = packet.GetAttribute<UInt32?>("Acct-Input-Gigawords");
             var acctOutputGigawords = packet.GetAttribute<UInt32?>("Acct-Output-Gigawords");
+            var nasIpAddress = packet.GetAttribute<IPAddress>("NAS-IP-Address");
 
             _log.Debug($"Handling interim packet for {msisdn} with AcctSessionId {acctSessionId}");
             using (var db = _contextFactory.GetContext())
@@ -137,7 +138,16 @@ namespace Flexinets.Radius
                     (int)acctSessionTime, acctInputGigawords, acctOutputGigawords);
             }
 
-            StartDisconnectChecker(acctSessionId);
+
+
+            Task.Run(() =>
+            {
+                if (_disconnector.CheckDisconnect(acctSessionId))
+                {
+                    _disconnector.SendPoD(nasIpAddress.ToString(), 1700, acctSessionId);
+                }
+            });
+
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
         }
 
@@ -163,27 +173,6 @@ namespace Flexinets.Radius
             }
 
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
-        }
-
-
-        private void StartDisconnectChecker(String acctSessionId)
-        {
-            _log.Debug($"Running disconnect checker for {acctSessionId}");
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo(_disconnectCheckerPath, acctSessionId)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    ErrorDialog = false,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                }
-            };
-
-            process.Start();
         }
 
 

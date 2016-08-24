@@ -43,14 +43,19 @@ namespace Flexinets.Radius
             using (var db = _contextFactory.GetContext())
             {
                 var networks = from o in db.Networks
-                               select new KeyValuePair<String, NetworkEntry>(o.mccmnc.ToString(), new NetworkEntry
+                               select new NetworkEntry
                                {
                                    CountryName = o.countryname,
                                    NetworkId = o.mccmnc.ToString(),
                                    NetworkName = o.providername
-                               });
+                               };
 
-                return new ConcurrentDictionary<String, NetworkEntry>(networks);
+                var directory = new ConcurrentDictionary<String, NetworkEntry>();
+                foreach (var network in networks)
+                {
+                    directory.TryAdd(network.NetworkId, network);
+                }
+                return directory;
             }
         }
 
