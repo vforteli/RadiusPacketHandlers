@@ -2,6 +2,7 @@
 using FlexinetsDBEF;
 using log4net;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace Flexinets.Radius
     {
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly ILog _log = LogManager.GetLogger(typeof(iPassPacketHandler));
+        private readonly HashSet<String> _failures = new HashSet<String>();
 
 
         public iPassPacketHandler(FlexinetsEntitiesFactory contextFactory)
@@ -157,6 +159,11 @@ namespace Flexinets.Radius
                     var passwordhash = db.Authenticate(usernamedomain, packetPassword).SingleOrDefault();
                     if (CryptoMethods.isValidPassword(passwordhash, packetPassword))
                     {
+                        if (_failures.Contains(usernamedomain))
+                        {
+                            _log.Warn($"Username {usernamedomain} authenticated after failures");
+                            _failures.Remove(usernamedomain);
+                        }
                         return packet.CreateResponsePacket(PacketCode.AccessAccept);
                     }
                     else
@@ -173,6 +180,7 @@ namespace Flexinets.Radius
                             _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters");
                         }
 
+                        _failures.Add(usernamedomain);
 
                         return packet.CreateResponsePacket(PacketCode.AccessReject);
                     }
