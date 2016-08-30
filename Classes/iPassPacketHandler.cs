@@ -175,6 +175,10 @@ namespace Flexinets.Radius
                         {
                             _log.Warn($"Username {usernamedomain} not found");
                         }
+                        else if (user.status != 1)
+                        {
+                            _log.Warn($"Username {usernamedomain} is not active");
+                        }
                         else
                         {
                             _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters");
