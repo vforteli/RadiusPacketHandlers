@@ -129,8 +129,8 @@ namespace Flexinets.Radius
 
             if (!validNetwork(networkId))
             {
-                _log.Fatal($"Got invalid networkid {networkId} from cache for msisdn {msisdn}");
-                throw new InvalidOperationException($"Got invalid networkid {networkId} from cache for msisdn {msisdn}");
+                _log.Fatal($"Got invalid networkid {networkId} for msisdn {msisdn}");
+                throw new InvalidOperationException($"Got invalid networkid {networkId} for msisdn {msisdn}");
             }
 
             return networkId;
@@ -172,6 +172,12 @@ namespace Flexinets.Radius
             if (d.GetElementsByTagName("message")[0].InnerText == "ok")
             {
                 networkId = d.GetElementsByTagName("MCC_MNC")[0].InnerText;
+                //todo add logic for parsing VLR global title in case mccmnc lookup fails?
+                //todo refactor this mess...
+                if (!validNetwork(networkId))
+                {
+                    _log.Error($"No valid network id found, VLR_address: {d.GetElementsByTagName("VLR_address")[0].InnerText}");
+                }
             }
             return networkId;
         }

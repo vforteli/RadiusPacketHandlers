@@ -59,7 +59,7 @@ namespace Flexinets.Radius
                             ACCTINPUTOCTETS = Convert.ToUInt32(packet.GetAttribute<UInt32?>("Acct-Input-Octets")),
                             ACCTOUTPUTOCTETS = Convert.ToUInt32(packet.GetAttribute<UInt32?>("Acct-Output-Octets")),
                             ACCTSESSIONID = packet.GetAttribute<String>("Acct-Session-Id"),
-                            ACCTSESSIONTIME = Convert.ToInt32(packet.GetAttribute<UInt32?>("Acct-Session-Time")), // todo change in db?
+                            ACCTSESSIONTIME = Convert.ToInt32(packet.GetAttribute<UInt32?>("Acct-Session-Time")),
                             NASIDENTIFIER = packet.GetAttribute<String>("NAS-Identifier"),
                             NASPORT = packet.GetAttribute<UInt32?>("NAS-Port"),
                             NASPORTTYPE = packet.GetAttribute<UInt32?>("NAS-Port-Type").ToString(),
@@ -155,7 +155,7 @@ namespace Flexinets.Radius
             else
             {
                 using (var db = _contextFactory.GetContext())
-                {
+                {                    
                     var passwordhash = db.Authenticate(usernamedomain, packetPassword).SingleOrDefault();
                     if (CryptoMethods.isValidPassword(passwordhash, packetPassword))
                     {
