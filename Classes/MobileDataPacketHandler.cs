@@ -52,13 +52,19 @@ namespace Flexinets.Radius
         private IRadiusPacket Authenticate(IRadiusPacket packet)
         {
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            _log.Debug($"Handling authentication packet for {msisdn}");
-
-            var networkid = _networkIdProvider.GetNetworkId(msisdn);
             var user = Utils.SplitUsernameDomain(packet.GetAttribute<String>("User-Name"));
 
+            _log.Debug($"Handling authentication packet for {msisdn}");
             using (var db = _contextFactory.GetContext())
             {
+                var preauthresult = db.PreAuthenticate(user.Username, user.Domain, msisdn).ToList();
+                if (!(preauthresult.Count > 0 && preauthresult.First() == null))
+                {
+                    _log.Info($"Preauth failed for msisdn {msisdn}, user {user.FullUsername}. Skipping network id check");
+                    return packet.CreateResponsePacket(PacketCode.AccessReject);
+                }
+                var networkid = _networkIdProvider.GetNetworkId(msisdn);
+
                 var result = db.Authenticate1(user.Username, user.Domain, msisdn, networkid).ToList();
                 if (result.Count > 0 && result.First() == null)
                 {
@@ -85,7 +91,7 @@ namespace Flexinets.Radius
                         {
                             sb.AppendLine($"User: {simcard.UserSetting.user.username}@{simcard.UserSetting.user.realm}, group: {simcard.UserSetting.user.directory.name}");
                         }
-                        //_log.Warn(sb.ToString()); // todo needs throttling to reduce unwanted spam
+                        _log.Info(sb.ToString().Trim()); // todo needs throttling to reduce unwanted spam
                     }
                     catch (Exception ex)
                     {
