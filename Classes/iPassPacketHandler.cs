@@ -181,7 +181,12 @@ namespace Flexinets.Radius
                         }
                         else
                         {
-                            _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters");
+                            _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters, email: {user.email}");
+                            var location = packet.GetAttribute<String>("Ipass-Location-Description"); 
+                            if (!String.IsNullOrEmpty(location))
+                            {
+                                _log.Warn($"iPass location description: {location}");
+                            }
                         }
 
                         _failures.Add(usernamedomain);
