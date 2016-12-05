@@ -24,11 +24,19 @@ namespace Flexinets.Radius
     {
         public static UsernameDomain SplitUsernameDomain(String rawusername)
         {
-            return new UsernameDomain
+            if (rawusername.Contains("@"))
             {
-                Username = rawusername.Substring(0, rawusername.LastIndexOf('@')),
-                Domain = rawusername.Substring(rawusername.LastIndexOf('@') + 1)
-            };
+                return new UsernameDomain
+                {
+                    Username = rawusername.Substring(0, rawusername.LastIndexOf('@')),
+                    Domain = rawusername.Substring(rawusername.LastIndexOf('@') + 1)
+                };
+            }
+            else
+            {
+                return new UsernameDomain { Username = rawusername, Domain = "flexinets" };
+            }
+            // todo 2016-12-05 make sure this doesnt screw anything up, quick hack for mbb
         }
     }
 }

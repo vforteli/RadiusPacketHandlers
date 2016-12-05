@@ -152,6 +152,16 @@ namespace Flexinets.Radius
                 _log.Info("Forwarding tb authentication");
                 return packet.CreateResponsePacket(ProxyAuthentication(usernamedomain, packetPassword));
             }
+            else if (usernamedomain.EndsWith("@chr.flexinets.se"))
+            {
+                _log.Info("Forwarding chr authentication");
+                return packet.CreateResponsePacket(ProxyAuthentication(usernamedomain, packetPassword));
+            }
+            else if (usernamedomain.EndsWith("@fls.flexinets.se"))
+            {
+                _log.Info("Forwarding fls authentication");
+                return packet.CreateResponsePacket(ProxyAuthentication(usernamedomain, packetPassword));
+            }
             else
             {
                 using (var db = _contextFactory.GetContext())

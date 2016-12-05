@@ -70,6 +70,8 @@ namespace Flexinets.Radius
                 {
                     var response = packet.CreateResponsePacket(PacketCode.AccessAccept);
                     response.AddAttribute("Acct-Interim-Interval", 60);
+                    response.AddAttribute("MS-Primary-DNS-Server", IPAddress.Parse("8.8.8.8"));
+                    response.AddAttribute("MS-Secondary-DNS-Server", IPAddress.Parse("8.8.4.4"));                    
                     return response;
                 }
                 else
