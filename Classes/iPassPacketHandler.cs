@@ -150,6 +150,7 @@ namespace Flexinets.Radius
             var domain = Utils.SplitUsernameDomain(usernamedomain).Domain;
             if (_authProxy.Servers.ContainsKey(domain))
             {
+                _log.Debug($"Handling username {usernamedomain} with proxy");
                 return packet.CreateResponsePacket(_authProxy.ProxyAuthentication(usernamedomain, packetPassword));
             }           
             else
