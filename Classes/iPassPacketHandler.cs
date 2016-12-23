@@ -1,12 +1,11 @@
-﻿using Flexinets.Security;
+﻿using Flexinets.Radius.PacketHandlers;
+using Flexinets.Security;
 using FlexinetsDBEF;
 using log4net;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
 namespace Flexinets.Radius
 {
@@ -14,12 +13,14 @@ namespace Flexinets.Radius
     {
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly ILog _log = LogManager.GetLogger(typeof(iPassPacketHandler));
+        private readonly iPassAuthenticationProxy _authProxy;
         private readonly HashSet<String> _failures = new HashSet<String>();
 
 
-        public iPassPacketHandler(FlexinetsEntitiesFactory contextFactory)
+        public iPassPacketHandler(FlexinetsEntitiesFactory contextFactory, iPassAuthenticationProxy authProxy)
         {
             _contextFactory = contextFactory;
+            _authProxy = authProxy;
         }
 
 
@@ -146,26 +147,15 @@ namespace Flexinets.Radius
 
             _log.Info($"Handling {packet.Code} packet for {packet.GetAttribute<String>("User-Name")}");
 
-            // Separate handler for tb?        
-            if (usernamedomain.EndsWith("@tb.flexinets.se"))
+            var domain = Utils.SplitUsernameDomain(usernamedomain).Domain;
+            if (_authProxy.Servers.ContainsKey(domain))
             {
-                _log.Info("Forwarding tb authentication");
-                return packet.CreateResponsePacket(ProxyAuthentication(usernamedomain, packetPassword));
-            }
-            else if (usernamedomain.EndsWith("@chr.flexinets.se"))
-            {
-                _log.Info("Forwarding chr authentication");
-                return packet.CreateResponsePacket(ProxyAuthentication(usernamedomain, packetPassword));
-            }
-            else if (usernamedomain.EndsWith("@fls.flexinets.se"))
-            {
-                _log.Info("Forwarding fls authentication");
-                return packet.CreateResponsePacket(ProxyAuthentication(usernamedomain, packetPassword));
-            }
+                return packet.CreateResponsePacket(_authProxy.ProxyAuthentication(usernamedomain, packetPassword));
+            }           
             else
             {
                 using (var db = _contextFactory.GetContext())
-                {                    
+                {
                     var passwordhash = db.Authenticate(usernamedomain, packetPassword).SingleOrDefault();
                     if (CryptoMethods.isValidPassword(passwordhash, packetPassword))
                     {
@@ -197,7 +187,7 @@ namespace Flexinets.Radius
                         else
                         {
                             _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters, email: {user.email}");
-                            var location = packet.GetAttribute<String>("Ipass-Location-Description"); 
+                            var location = packet.GetAttribute<String>("Ipass-Location-Description");
                             if (!String.IsNullOrEmpty(location))
                             {
                                 _log.Warn($"iPass location description: {location}");
@@ -225,50 +215,6 @@ namespace Flexinets.Radius
             {
                 return db.users.SingleOrDefault(o => o.username == user.Username && o.realm == user.Domain);
             }
-        }
-
-
-        /// <summary>
-        /// Proxy authentication to another roamserver using checkipass
-        /// </summary>
-        /// <param name="usernamedomain"></param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        private PacketCode ProxyAuthentication(String usernamedomain, String password)
-        {
-            // todo add indefinite password caching?
-            // todo these should be injected
-            var host = "127.0.0.1";
-            var checkIpassPath = @"c:\ipass\roamserver\6.1.0\test\checkipass.bat";
-
-            var path = $"/C {checkIpassPath} -u {usernamedomain} -p {password} -host {host} -type auth";
-
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo("cmd.exe", path)
-                {
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            var sb = new StringBuilder();
-            process.OutputDataReceived += (sender, args) => sb.AppendLine(args.Data);
-            process.Start();
-            process.BeginOutputReadLine();
-            process.StandardInput.WriteLine();  // Exits the script
-            process.WaitForExit();
-
-            var content = sb.ToString();
-            _log.Debug(content);
-
-            if (content.Contains("Status: accept"))
-            {
-                return PacketCode.AccessAccept;
-            }
-            return PacketCode.AccessReject;
         }
 
 

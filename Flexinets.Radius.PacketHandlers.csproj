@@ -59,7 +59,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\CacheEntry.cs" />
+    <Compile Include="Classes\iPassAuthenticationProxy.cs" />
     <Compile Include="Classes\iPassPacketHandler.cs" />
+    <Compile Include="Classes\iPassServerInfo.cs" />
     <Compile Include="Classes\MobileDataPacketHandler.cs" />
     <Compile Include="Classes\NetworkEntry.cs" />
     <Compile Include="Classes\NetworkIdProvider.cs" />
