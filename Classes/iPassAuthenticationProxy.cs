@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using FlexinetsDBEF;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,18 +12,33 @@ namespace Flexinets.Radius.PacketHandlers
     public class iPassAuthenticationProxy
     {
         private readonly ILog _log = LogManager.GetLogger(typeof(iPassAuthenticationProxy));
+        private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly String _oldPath;
         private readonly String _newPath;
         public readonly Dictionary<String, iPassServerInfo> Servers = new Dictionary<String, iPassServerInfo>();
 
 
-        public iPassAuthenticationProxy(String oldPath, String newPath)
+        public iPassAuthenticationProxy(FlexinetsEntitiesFactory contextFactory, String oldPath, String newPath)
         {
-            _oldPath = oldPath; // @"c:\ipass\roamserver\5.2.1\test\checkipass.exe"
-            _newPath = newPath; // @"c:\ipass\roamserver\6.1.0\test\checkipass.bat";
+            _contextFactory = contextFactory;
+            _oldPath = oldPath;
+            _newPath = newPath;
+
+            // todo figure out of this needs to be refreshed for every request or on demand
+            using (var db = _contextFactory.GetContext())
+            {
+                var servers = db.Roamservers.ToList();
+                servers.ForEach(o => Servers.Add(o.domain, new iPassServerInfo { host = o.host, UseLegacy = o.uselegacy }));
+            }
         }
 
 
+        /// <summary>
+        /// Proxy iPass authentication to an external server
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         public PacketCode ProxyAuthentication(String username, String password)
         {
             var usernamedomain = Utils.SplitUsernameDomain(username);
@@ -42,7 +58,6 @@ namespace Flexinets.Radius.PacketHandlers
             _log.Error($"No proxy server found for username {username}");
             return PacketCode.AccessReject;
         }
-
 
 
         /// <summary>
