@@ -40,7 +40,7 @@ namespace Flexinets.Radius.PacketHandlers
         /// <returns></returns>
         public PacketCode ProxyAuthentication(String username, String password)
         {
-            var usernamedomain = Utils.SplitUsernameDomain(username);
+            var usernamedomain = UsernameDomain.Parse(username);
             if (Servers.ContainsKey(usernamedomain.Domain))
             {
                 var server = Servers[usernamedomain.Domain];

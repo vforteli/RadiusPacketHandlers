@@ -52,7 +52,7 @@ namespace Flexinets.Radius
         private IRadiusPacket Authenticate(IRadiusPacket packet)
         {
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            var user = Utils.SplitUsernameDomain(packet.GetAttribute<String>("User-Name"));
+            var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
 
             _log.Debug($"Handling authentication packet for {msisdn}");
             using (var db = _contextFactory.GetContext())
@@ -110,7 +110,7 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Start(IRadiusPacket packet)
         {
-            var user = Utils.SplitUsernameDomain(packet.GetAttribute<String>("User-Name"));
+            var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
             var acctStatusType = "Start";    // duuh
@@ -128,7 +128,7 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Interim(IRadiusPacket packet)
         {
-            var user = Utils.SplitUsernameDomain(packet.GetAttribute<String>("User-Name"));
+            var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
             var acctStatusType = "Alive";    // duuh
@@ -162,7 +162,7 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Stop(IRadiusPacket packet)
         {
-            var user = Utils.SplitUsernameDomain(packet.GetAttribute<String>("User-Name"));
+            var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
             var acctStatusType = "Stop";    // duuh

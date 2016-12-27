@@ -18,11 +18,9 @@ namespace Flexinets.Radius
                 return $"{Username}@{Domain}";
             }
         }
-    }
 
-    public static class Utils
-    {
-        public static UsernameDomain SplitUsernameDomain(String rawusername)
+
+        public static UsernameDomain Parse(String rawusername)
         {
             if (rawusername.Contains("@"))
             {

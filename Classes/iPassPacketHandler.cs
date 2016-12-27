@@ -147,7 +147,7 @@ namespace Flexinets.Radius
 
             _log.Info($"Handling {packet.Code} packet for {packet.GetAttribute<String>("User-Name")}");
 
-            var domain = Utils.SplitUsernameDomain(usernamedomain).Domain;
+            var domain = UsernameDomain.Parse(usernamedomain).Domain;
             if (_authProxy.Servers.ContainsKey(domain))
             {
                 _log.Debug($"Handling username {usernamedomain} with proxy");
@@ -170,7 +170,7 @@ namespace Flexinets.Radius
                     else
                     {
                         // todo remove transition period stuff...
-                        var username = Utils.SplitUsernameDomain(usernamedomain);
+                        var username = UsernameDomain.Parse(usernamedomain);
                         var user = db.users.SingleOrDefault(o => o.username == username.Username && o.realm == username.Domain);
                         if (user == null)
                         {
@@ -211,7 +211,7 @@ namespace Flexinets.Radius
         /// <returns></returns>
         private user GetUser(String rawusername)
         {
-            var user = Utils.SplitUsernameDomain(rawusername);
+            var user = UsernameDomain.Parse(rawusername);
             using (var db = _contextFactory.GetContext())
             {
                 return db.users.SingleOrDefault(o => o.username == user.Username && o.realm == user.Domain);
