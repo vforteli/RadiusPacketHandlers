@@ -14,7 +14,6 @@ namespace Flexinets.Radius.PacketHandlers
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly String _oldPath;
         private readonly String _newPath;
-        public readonly Dictionary<String, iPassServerInfo> Servers = new Dictionary<String, iPassServerInfo>();
 
 
         public iPassAuthenticationProxy(FlexinetsEntitiesFactory contextFactory, String oldPath, String newPath)
@@ -22,13 +21,6 @@ namespace Flexinets.Radius.PacketHandlers
             _contextFactory = contextFactory;
             _oldPath = oldPath;
             _newPath = newPath;
-
-            // todo figure out of this needs to be refreshed for every request or on demand
-            using (var db = _contextFactory.GetContext())
-            {
-                var servers = db.Roamservers.ToList();
-                servers.ForEach(o => Servers.Add(o.domain, new iPassServerInfo { host = o.host, UseLegacy = o.uselegacy }));
-            }
         }
 
 
@@ -38,24 +30,28 @@ namespace Flexinets.Radius.PacketHandlers
         /// <param name="username"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public PacketCode ProxyAuthentication(String username, String password)
+        public PacketCode? ProxyAuthentication(String username, String password)
         {
             var usernamedomain = UsernameDomain.Parse(username);
-            if (Servers.ContainsKey(usernamedomain.Domain))
+
+            using (var db = _contextFactory.GetContext())
             {
-                var server = Servers[usernamedomain.Domain];
-                if (server.UseLegacy)
+                var server = db.Roamservers.FirstOrDefault(o => o.domain == usernamedomain.Domain);
+                if (server != null)
                 {
-                    return ProxyAuthenticationSsl(username, password, server.host);
-                }
-                else
-                {
-                    return ProxyAuthenticationNew(username, password, server.host);
+                    _log.Debug($"Found proxy server {server.host} for username {username}");
+                    if (server.uselegacy)
+                    {
+                        return ProxyAuthenticationSsl(username, password, server.host);
+                    }
+                    else
+                    {
+                        return ProxyAuthenticationNew(username, password, server.host);
+                    }
                 }
             }
 
-            _log.Error($"No proxy server found for username {username}");
-            return PacketCode.AccessReject;
+            return null;
         }
 
 

@@ -147,11 +147,11 @@ namespace Flexinets.Radius
 
             _log.Info($"Handling {packet.Code} packet for {packet.GetAttribute<String>("User-Name")}");
 
-            var domain = UsernameDomain.Parse(usernamedomain).Domain;
-            if (_authProxy.Servers.ContainsKey(domain))
+            var proxyresponse = _authProxy.ProxyAuthentication(usernamedomain, packetPassword);
+            if (proxyresponse.HasValue)
             {
-                _log.Debug($"Handling username {usernamedomain} with proxy");
-                return packet.CreateResponsePacket(_authProxy.ProxyAuthentication(usernamedomain, packetPassword));
+                _log.Info($"Got response from proxy for username {usernamedomain}");
+                return packet.CreateResponsePacket(proxyresponse.Value);
             }           
             else
             {
