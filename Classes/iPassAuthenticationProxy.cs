@@ -1,7 +1,6 @@
 ﻿using FlexinetsDBEF;
 using log4net;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -40,14 +39,49 @@ namespace Flexinets.Radius.PacketHandlers
                 if (server != null)
                 {
                     _log.Debug($"Found proxy server {server.host} for username {username}");
+
+                    ProcessStartInfo startinfo;
                     if (server.uselegacy)
                     {
-                        return ProxyAuthenticationSsl(username, password, server.host);
+                        startinfo = ProxyAuthenticationSsl(username, password, server.host);
                     }
                     else
                     {
-                        return ProxyAuthenticationNew(username, password, server.host);
+                        startinfo = ProxyAuthenticationNew(username, password, server.host);
                     }
+
+                    using (var process = new Process
+                    {
+                        StartInfo = startinfo
+                    })
+                    {
+                        var sb = new StringBuilder();
+                        process.OutputDataReceived += (sender, args) => sb.AppendLine(args.Data);
+                        process.Start();
+                        process.BeginOutputReadLine();
+                        process.StandardInput.WriteLine();  // Exits the script
+                        process.WaitForExit();
+                        var content = sb.ToString();
+
+                        _log.Debug(content);
+
+                        if (content.Contains("Status: accept"))
+                        {
+                            return PacketCode.AccessAccept;
+                        }
+
+                        if (content.Contains("LDAP User found but memberOf validation failed"))
+                        {
+                            _log.Warn($"MemberOf failed for user {username}");
+                        }
+                        if (content.Contains("Message: LDAP search found no entries for this user"))
+                        {
+                            _log.Warn($"Username {username} not found");
+                        }
+                    }
+
+                    // todo add logging for bad password?
+                    return PacketCode.AccessReject;
                 }
             }
 
@@ -61,36 +95,17 @@ namespace Flexinets.Radius.PacketHandlers
         /// <param name="usernamedomain"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private PacketCode ProxyAuthenticationNew(String usernamedomain, String password, String host)
+        private ProcessStartInfo ProxyAuthenticationNew(String usernamedomain, String password, String host)
         {
-            // todo add indefinite password caching?
-            var path = $"/C {_newPath} -u {usernamedomain} -p {password} -host {host} -type auth";
-            var process = new Process
+            return new ProcessStartInfo
             {
-                StartInfo = new ProcessStartInfo("cmd.exe", path)
-                {
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
+                FileName = "cmd.exe",
+                Arguments = $"/C {_newPath} -u {usernamedomain} -p {password} -host {host} -type auth",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
             };
-
-            var sb = new StringBuilder();
-            process.OutputDataReceived += (sender, args) => sb.AppendLine(args.Data);
-            process.Start();
-            process.BeginOutputReadLine();
-            process.StandardInput.WriteLine();  // Exits the script
-            process.WaitForExit();
-
-            var content = sb.ToString();
-            _log.Debug(content);
-
-            if (content.Contains("Status: accept"))
-            {
-                return PacketCode.AccessAccept;
-            }
-            return PacketCode.AccessReject;
         }
 
 
@@ -101,46 +116,17 @@ namespace Flexinets.Radius.PacketHandlers
         /// <param name="usernamedomain"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private PacketCode ProxyAuthenticationSsl(String usernamedomain, String password, String host)
+        private ProcessStartInfo ProxyAuthenticationSsl(String usernamedomain, String password, String host)
         {
-            // todo add indefinite password caching?
-            var process = new Process
+            return new ProcessStartInfo
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = _oldPath,
-                    Arguments = $" -u {usernamedomain} -p {password} -host {host} -type auth",
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
+                FileName = _oldPath,
+                Arguments = $" -u {usernamedomain} -p {password} -host {host} -type auth",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
             };
-
-            var sb = new StringBuilder();
-            process.OutputDataReceived += (sender, args) => sb.AppendLine(args.Data);
-            process.Start();
-            process.BeginOutputReadLine();
-            process.StandardInput.WriteLine();  // Exits the script
-            process.WaitForExit();
-
-            var content = sb.ToString();
-
-            _log.Debug(content);
-
-            if (content.Contains("Status: accept"))
-            {
-                return PacketCode.AccessAccept;
-            }
-
-            if (content.Contains("LDAP User found but memberOf validation failed"))
-            {
-                _log.Info($"MemberOf failed for user {usernamedomain}");
-            }
-
-            // todo add logging for bad password?
-            // todo add logging for non-existent users?
-            return PacketCode.AccessReject;
         }
     }
 }
