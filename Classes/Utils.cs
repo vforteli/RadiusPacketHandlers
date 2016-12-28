@@ -36,5 +36,11 @@ namespace Flexinets.Radius
             }
             // todo 2016-12-05 make sure this doesnt screw anything up, quick hack for mbb
         }
+
+
+        public override string ToString()
+        {
+            return $"{Username ?? ""}@{Domain ?? ""}";
+        }
     }
 }
