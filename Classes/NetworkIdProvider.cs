@@ -3,10 +3,10 @@ using FlexinetsDBEF;
 using log4net;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace Flexinets.Radius
 {
@@ -104,7 +104,7 @@ namespace Flexinets.Radius
 
             try
             {
-                networkId = GetNetworkIdFromApi(networkId, url);
+                networkId = GetNetworkIdFromApi(url);
             }
             catch (WebException ex)
             {
@@ -112,7 +112,7 @@ namespace Flexinets.Radius
                 {
                     _log.Warn("Got 401, refreshing API credentials from database and retrying");
                     _apiCredential = GetApiCredentials();
-                    networkId = GetNetworkIdFromApi(networkId, url);
+                    networkId = GetNetworkIdFromApi(url);
                 }
                 else
                 {
@@ -139,6 +139,7 @@ namespace Flexinets.Radius
 
         /// <summary>
         /// Optimistically verify that the network id returned from the API is valid
+        /// Valid means known to flexinets...
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
@@ -162,24 +163,28 @@ namespace Flexinets.Radius
         /// <param name="networkId"></param>
         /// <param name="url"></param>
         /// <returns></returns>
-        private String GetNetworkIdFromApi(String networkId, String url)
+        internal String GetNetworkIdFromApi(String url)
         {
             var client = new WebClient { Credentials = _apiCredential };
             var response = client.DownloadString(url);
-
-            var d = new XmlDocument();
-            d.LoadXml(response);
-            if (d.GetElementsByTagName("message")[0].InnerText == "ok")
+            
+            var document = new XmlDocument();
+            document.LoadXml(response);
+            if (document.GetElementsByTagName("message")[0].InnerText == "ok")
             {
-                networkId = d.GetElementsByTagName("MCC_MNC")[0].InnerText;
+                var networkId = document.GetElementsByTagName("MCC_MNC")[0].InnerText;
                 //todo add logic for parsing VLR global title in case mccmnc lookup fails?
                 //todo refactor this mess...
                 if (!validNetwork(networkId))
                 {
-                    _log.Error($"No valid network id found, VLR_address: {d.GetElementsByTagName("VLR_address")[0].InnerText}");
+                    _log.Error($"No valid network id found, VLR_address: {document.GetElementsByTagName("VLR_address")[0].InnerText}");
                 }
+
+                return networkId;
             }
-            return networkId;
+
+            _log.Error(document.ToReadableString());
+            throw new InvalidOperationException("NetworkId Api failed, see logs for details");
         }
 
 

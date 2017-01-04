@@ -43,6 +43,7 @@
       <HintPath>..\packages\log4net.2.0.6\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="SMSGateway, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\WebSites\FlexinetsPortal\SMSGateway\SMSGateway\bin\Debug\SMSGateway.dll</HintPath>
@@ -157,8 +158,9 @@
     <Compile Include="Classes\NetworkIdProvider.cs" />
     <Compile Include="Classes\RadiusDisconnector.cs" />
     <Compile Include="Classes\WelcomeSender.cs" />
+    <Compile Include="Classes\XmlUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Classes\Utils.cs" />
+    <Compile Include="Classes\UsernameDomain.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\WebSites\FlexinetsPortal\FlexinetsAccessControl\Flexinets.Security.csproj">

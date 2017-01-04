@@ -69,7 +69,6 @@ namespace Flexinets.Radius.PacketHandlers
                         {
                             return PacketCode.AccessAccept;
                         }
-
                         if (content.Contains("LDAP User found but memberOf validation failed"))
                         {
                             _log.Warn($"MemberOf failed for user {username}");
