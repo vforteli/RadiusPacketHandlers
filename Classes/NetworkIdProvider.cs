@@ -5,8 +5,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Linq;
 
 namespace Flexinets.Radius
 {
@@ -14,6 +14,7 @@ namespace Flexinets.Radius
     {
         private readonly ILog _log = LogManager.GetLogger(typeof(NetworkIdProvider));
         private readonly ConcurrentDictionary<String, CacheEntry> _networkIdCache = new ConcurrentDictionary<String, CacheEntry>();
+        private readonly ConcurrentDictionary<String, Task<String>> _pendingApiRequests = new ConcurrentDictionary<String, Task<String>>();
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private NetworkCredential _apiCredential;
         private readonly String _apiUrl;
@@ -99,12 +100,11 @@ namespace Flexinets.Radius
 
         private String GetId(String msisdn)
         {
-            String networkId = null;
-            var url = _apiUrl + msisdn;
+            String networkId = null;            
 
             try
             {
-                networkId = GetNetworkIdFromApi(url);
+                networkId = GetNetworkIdFromApi(msisdn).Result;
             }
             catch (WebException ex)
             {
@@ -112,7 +112,7 @@ namespace Flexinets.Radius
                 {
                     _log.Warn("Got 401, refreshing API credentials from database and retrying");
                     _apiCredential = GetApiCredentials();
-                    networkId = GetNetworkIdFromApi(url);
+                    networkId = GetNetworkIdFromApi(msisdn).Result;
                 }
                 else
                 {
@@ -163,11 +163,25 @@ namespace Flexinets.Radius
         /// <param name="networkId"></param>
         /// <param name="url"></param>
         /// <returns></returns>
-        internal String GetNetworkIdFromApi(String url)
+        internal async Task<String> GetNetworkIdFromApi(String msisdn)
         {
-            var client = new WebClient { Credentials = _apiCredential };
-            var response = client.DownloadString(url);
-            
+            var url = _apiUrl + msisdn;
+
+            Task<String> task;
+            if (!_pendingApiRequests.TryGetValue(msisdn, out task))
+            {
+                _log.Debug($"Starting new api request for msisdn {msisdn}");
+                var client = new WebClient { Credentials = _apiCredential };
+                task = client.DownloadStringTaskAsync(url);
+                _pendingApiRequests.TryAdd(msisdn, task);
+            }
+            else
+            {
+                _log.Debug($"Waiting for previous api request for msisdn {msisdn}");
+            }
+            var response = await task;
+            _pendingApiRequests.TryRemove(msisdn, out task);
+
             var document = new XmlDocument();
             document.LoadXml(response);
             if (document.GetElementsByTagName("message")[0].InnerText == "ok")
