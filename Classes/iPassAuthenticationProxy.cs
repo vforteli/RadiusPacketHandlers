@@ -40,6 +40,14 @@ namespace Flexinets.Radius.PacketHandlers
                 {
                     _log.Debug($"Found proxy server {server.host} for username {username}");
 
+                    if (!String.IsNullOrEmpty(server.rewritedomain))
+                    {
+                        var rewriteusername = UsernameDomain.Parse(username);
+                        rewriteusername.Domain = server.rewritedomain;
+                        _log.Debug($"Rewriting username from {username} to {rewriteusername}");
+                        username = rewriteusername.FullUsername;
+                    }
+
                     ProcessStartInfo startinfo;
                     if (server.uselegacy)
                     {
