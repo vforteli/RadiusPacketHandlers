@@ -77,9 +77,12 @@ namespace Flexinets.Radius.PacketHandlers
                         {
                             _log.Warn($"Username {username} not found");
                         }
+                        if (content.Contains("Status: reject"))
+                        {
+                            _log.Warn($"Got reject for user {username} from proxy");
+                        }
                     }
 
-                    // todo add logging for bad password?
                     return PacketCode.AccessReject;
                 }
             }
