@@ -48,14 +48,18 @@ namespace Flexinets.Radius
             var acctStatusType = packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type");
             if (acctStatusType == AcctStatusTypes.Start || acctStatusType == AcctStatusTypes.Stop)
             {
-                var user = GetUser(packet.GetAttribute<String>("User-Name"));
-                _log.Info($"Handling {acctStatusType} packet for {packet.GetAttribute<String>("User-Name")}");
+                var usernamedomain = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
+                var nodeid = GetUserNodeId(usernamedomain.Username, usernamedomain.Domain);
+                _log.Info($"Handling {acctStatusType} packet for {usernamedomain}");
                 try
                 {
                     using (var db = _contextFactory.GetContext())
                     {
                         var entry = new radiatoraccounting
                         {
+                            username = usernamedomain.Username,
+                            realm = usernamedomain.Domain,
+                            node_id = nodeid,
                             ACCTSTATUSTYPE = (packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type")).ToString(),
                             ACCTINPUTOCTETS = Convert.ToUInt32(packet.GetAttribute<UInt32?>("Acct-Input-Octets")),
                             ACCTOUTPUTOCTETS = Convert.ToUInt32(packet.GetAttribute<UInt32?>("Acct-Output-Octets")),
@@ -65,10 +69,7 @@ namespace Flexinets.Radius
                             NASPORT = packet.GetAttribute<UInt32?>("NAS-Port"),
                             NASPORTTYPE = packet.GetAttribute<UInt32?>("NAS-Port-Type").ToString(),
                             WISPrLocationName = packet.GetAttribute<String>("WISPr-Location-Name"),
-                            temp = packet.GetAttribute<String>("Ipass-Location-Description"),
-                            username = user.username,
-                            realm = user.realm,
-                            node_id = user.node_id,
+                            temp = packet.GetAttribute<String>("Ipass-Location-Description"),                            
                             timestamp_datetime = packet.Attributes.ContainsKey("Timestamp") ? (DateTime?)DateTimeOffset.FromUnixTimeSeconds(packet.GetAttribute<Int32>("Timestamp")).UtcDateTime : DateTime.UtcNow
                         };
                         db.radiatoraccountings.Add(entry);
@@ -92,14 +93,14 @@ namespace Flexinets.Radius
                         {
                             db.radiatoronlines.Add(new radiatoronline
                             {
-                                username = user.username,
-                                realm = user.realm,
+                                username = usernamedomain.Username,
+                                realm = usernamedomain.Domain,
+                                node_id = nodeid,
                                 ACCTSESSIONID = packet.GetAttribute<String>("Acct-Session-Id"),
                                 timestamp_datetime = packet.Attributes.ContainsKey("Timestamp") ? (DateTime?)DateTimeOffset.FromUnixTimeSeconds(packet.GetAttribute<Int32>("Timestamp")).UtcDateTime : DateTime.UtcNow,
                                 NASIDENTIFIER = packet.GetAttribute<String>("NAS-Identifier"),
                                 NASPORT = packet.GetAttribute<UInt32?>("NAS-Port"),
                                 NASPORTTYPE = packet.GetAttribute<UInt32?>("NAS-Port-Type").ToString(),
-                                node_id = user.node_id,
                                 WISPrLocationName = packet.GetAttribute<String>("Ipass-Location-Description")
                             });
                             db.SaveChanges();
@@ -205,16 +206,29 @@ namespace Flexinets.Radius
 
 
         /// <summary>
-        /// Get a user from db
+        /// Get a node id for a user or domain
         /// </summary>
         /// <param name="rawusername"></param>
         /// <returns></returns>
-        private user GetUser(String rawusername)
+        private Int32 GetUserNodeId(String username, String domain)
         {
-            var user = UsernameDomain.Parse(rawusername);
             using (var db = _contextFactory.GetContext())
             {
-                return db.users.SingleOrDefault(o => o.username == user.Username && o.realm == user.Domain);
+                var user = db.users.SingleOrDefault(o => o.username == username && o.realm == domain);
+                if (user != null)   // Fully qualified username
+                {
+                    return user.node_id;
+                }
+                else // Domain mapped
+                {
+                    var nodeid = from o in db.directories
+                                 where o.ipass_realms.Any(r => r.realm == domain)
+                                 where o.status == 1
+                                 orderby o.node_id
+                                 select o.node_id;
+
+                    return nodeid.FirstOrDefault();
+                }
             }
         }
 
