@@ -36,32 +36,6 @@ namespace Flexinets.Radius
 
 
         /// <summary>
-        /// Load networks from database
-        /// </summary>
-        /// <returns></returns>
-        private ConcurrentDictionary<string, NetworkEntry> LoadNetworks()
-        {
-            using (var db = _contextFactory.GetContext())
-            {
-                var networks = from o in db.Networks
-                               select new NetworkEntry
-                               {
-                                   CountryName = o.countryname,
-                                   NetworkId = o.mccmnc.ToString(),
-                                   NetworkName = o.providername
-                               };
-
-                var directory = new ConcurrentDictionary<String, NetworkEntry>();
-                foreach (var network in networks)
-                {
-                    directory.TryAdd(network.NetworkId, network);
-                }
-                return directory;
-            }
-        }
-
-
-        /// <summary>
         /// Get the mccmnc for a msisdn
         /// </summary>
         /// <param name="msisdn"></param>
@@ -91,7 +65,7 @@ namespace Flexinets.Radius
             }
 
             var entry = new CacheEntry { NetworkId = networkId, DateSet = DateTime.UtcNow };
-            _networkIdCache.AddOrUpdate(msisdn, entry, (s, i) => entry);  // dafuk?
+            _networkIdCache.AddOrUpdate(msisdn, entry, (s, i) => entry);
 
             _log.Debug($"Refreshed cache entry for msisdn {msisdn}, networkid {networkId}");
             return networkId;
@@ -138,30 +112,9 @@ namespace Flexinets.Radius
 
 
         /// <summary>
-        /// Optimistically verify that the network id returned from the API is valid
-        /// Valid means known to flexinets...
-        /// </summary>
-        /// <param name="networkId"></param>
-        /// <returns></returns>
-        private Boolean validNetwork(String networkId)
-        {
-            if (_networkCache.ContainsKey(networkId))
-            {
-                return true;
-            }
-
-            // Dont take no for an answer, refresh list in case something has been added
-            _networkCache = LoadNetworks();
-
-            return _networkCache.ContainsKey(networkId);
-        }
-
-
-        /// <summary>
         /// GetNetworkIdFromApi
         /// </summary>
-        /// <param name="networkId"></param>
-        /// <param name="url"></param>
+        /// <param name="msisdn"></param>
         /// <returns></returns>
         internal async Task<String> GetNetworkIdFromApi(String msisdn)
         {
@@ -199,6 +152,52 @@ namespace Flexinets.Radius
 
             _log.Error(document.ToReadableString());
             throw new InvalidOperationException("NetworkId Api failed, see logs for details");
+        }
+
+
+        /// <summary>
+        /// Load networks from database
+        /// </summary>
+        /// <returns></returns>
+        private ConcurrentDictionary<String, NetworkEntry> LoadNetworks()
+        {
+            using (var db = _contextFactory.GetContext())
+            {
+                var networks = from o in db.Networks
+                               select new NetworkEntry
+                               {
+                                   CountryName = o.countryname,
+                                   NetworkId = o.mccmnc.ToString(),
+                                   NetworkName = o.providername
+                               };
+
+                var directory = new ConcurrentDictionary<String, NetworkEntry>();
+                foreach (var network in networks)
+                {
+                    directory.TryAdd(network.NetworkId, network);
+                }
+                return directory;
+            }
+        }
+
+
+        /// <summary>
+        /// Optimistically verify that the network id returned from the API is valid
+        /// Valid means known to flexinets...
+        /// </summary>
+        /// <param name="networkId"></param>
+        /// <returns></returns>
+        private Boolean validNetwork(String networkId)
+        {
+            if (_networkCache.ContainsKey(networkId))
+            {
+                return true;
+            }
+
+            // Dont take no for an answer, refresh list in case something has been added
+            _networkCache = LoadNetworks();
+
+            return _networkCache.ContainsKey(networkId);
         }
 
 
