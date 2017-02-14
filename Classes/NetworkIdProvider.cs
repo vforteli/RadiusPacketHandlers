@@ -14,12 +14,16 @@ namespace Flexinets.Radius
     {
         private readonly ILog _log = LogManager.GetLogger(typeof(NetworkIdProvider));
         private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly FlexinetsEntitiesFactory _contextFactory;
+        private readonly String _apiUrl;
+        private readonly IWebClientFactory _webClientFactory;
+
         private readonly ConcurrentDictionary<String, CacheEntry> _networkIdCache = new ConcurrentDictionary<String, CacheEntry>();
         private readonly ConcurrentDictionary<String, Task<String>> _pendingApiRequests = new ConcurrentDictionary<String, Task<String>>();
         private readonly ConcurrentDictionary<String, FailedRequestBackOffCounter> _backOffCounter = new ConcurrentDictionary<String, FailedRequestBackOffCounter>();
-        private readonly FlexinetsEntitiesFactory _contextFactory;
+        
         private NetworkCredential _apiCredential;
-        private readonly String _apiUrl;
+        
         private readonly Int32 cacheTimeout = 30;
         private ConcurrentDictionary<String, NetworkEntry> _networkCache;
 
@@ -28,13 +32,14 @@ namespace Flexinets.Radius
         /// Provider for getting the network id from FL1
         /// </summary>
         /// <param name="contextFactory"></param>
-        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, String apiUrl, IDateTimeProvider dateTimeProvider)
+        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, String apiUrl, IDateTimeProvider dateTimeProvider, IWebClientFactory webClientFactory)
         {
             _apiUrl = apiUrl;
             _contextFactory = contextFactory;
             _apiCredential = GetApiCredentials();
             _networkCache = LoadNetworks();
             _dateTimeProvider = dateTimeProvider;
+            _webClientFactory = webClientFactory;
         }
 
 
@@ -156,9 +161,10 @@ namespace Flexinets.Radius
 
             Task<String> task;
             if (!_pendingApiRequests.TryGetValue(msisdn, out task))
-            {
+            {               
                 _log.Debug($"Starting new api request for msisdn {msisdn}");
-                var client = new WebClient { Credentials = _apiCredential };
+                var client = _webClientFactory.Create();
+                client.Credentials = _apiCredential;
                 task = client.DownloadStringTaskAsync(url);
                 _pendingApiRequests.TryAdd(msisdn, task);
             }
