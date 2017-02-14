@@ -1,6 +1,8 @@
 ﻿using FlexinetsDBEF;
 using log4net;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -15,7 +17,7 @@ namespace Flexinets.Radius
         private readonly NetworkIdProvider _networkIdProvider;
         private readonly RadiusDisconnector _disconnector;
         private readonly WelcomeSender _welcomeSender;
-
+        
 
         public MobileDataPacketHandler(FlexinetsEntitiesFactory contextFactory, NetworkIdProvider networkIdProvider, WelcomeSender welcomeSender, RadiusDisconnector disconnector)
         {
@@ -63,7 +65,15 @@ namespace Flexinets.Radius
                     _log.Info($"Preauth failed for msisdn {msisdn}, user {user.FullUsername}. Skipping network id check");
                     return packet.CreateResponsePacket(PacketCode.AccessReject);
                 }
-                var networkid = _networkIdProvider.GetNetworkId(msisdn);
+
+                String networkid;
+                if (!_networkIdProvider.TryGetNetworkId(msisdn, out networkid))
+                {
+                    return packet.CreateResponsePacket(PacketCode.AccessReject);
+                }
+
+
+
 
                 var result = db.Authenticate1(user.Username, user.Domain, msisdn, networkid).ToList();
                 if (result.Count > 0 && result.First() == null)
@@ -71,7 +81,7 @@ namespace Flexinets.Radius
                     var response = packet.CreateResponsePacket(PacketCode.AccessAccept);
                     response.AddAttribute("Acct-Interim-Interval", 60);
                     response.AddAttribute("MS-Primary-DNS-Server", IPAddress.Parse("8.8.8.8"));
-                    response.AddAttribute("MS-Secondary-DNS-Server", IPAddress.Parse("8.8.4.4"));                    
+                    response.AddAttribute("MS-Secondary-DNS-Server", IPAddress.Parse("8.8.4.4"));
                     return response;
                 }
                 else

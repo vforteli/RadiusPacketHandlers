@@ -13,8 +13,10 @@ namespace Flexinets.Radius
     public class NetworkIdProvider
     {
         private readonly ILog _log = LogManager.GetLogger(typeof(NetworkIdProvider));
+        private readonly IDateTimeProvider _dateTimeProvider;
         private readonly ConcurrentDictionary<String, CacheEntry> _networkIdCache = new ConcurrentDictionary<String, CacheEntry>();
         private readonly ConcurrentDictionary<String, Task<String>> _pendingApiRequests = new ConcurrentDictionary<String, Task<String>>();
+        private readonly ConcurrentDictionary<String, FailedRequestBackOffCounter> _backOffCounter = new ConcurrentDictionary<String, FailedRequestBackOffCounter>();
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private NetworkCredential _apiCredential;
         private readonly String _apiUrl;
@@ -26,12 +28,44 @@ namespace Flexinets.Radius
         /// Provider for getting the network id from FL1
         /// </summary>
         /// <param name="contextFactory"></param>
-        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, String apiUrl)
+        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, String apiUrl, IDateTimeProvider dateTimeProvider)
         {
             _apiUrl = apiUrl;
             _contextFactory = contextFactory;
             _apiCredential = GetApiCredentials();
             _networkCache = LoadNetworks();
+            _dateTimeProvider = dateTimeProvider;
+        }
+
+
+        public Boolean TryGetNetworkId(String msisdn, out String networkId)
+        {
+            networkId = "";
+
+            FailedRequestBackOffCounter counter;
+            if (_backOffCounter.TryGetValue(msisdn, out counter))
+            {
+                if (_dateTimeProvider.UtcNow < counter.NextAttempt)
+                {
+                    _log.Warn($"Waiting until {counter.NextAttempt} for msisdn {msisdn}. {counter.FailureCount} consecutive failed networkid api requests");
+                    return false;
+                }
+            }
+
+            try
+            {
+                networkId = GetNetworkId(msisdn);
+
+                // If we get here everything went well, remove the back off counter
+                _backOffCounter.TryRemove(msisdn, out counter);
+                return true;
+            }
+            catch (Exception)
+            {
+                counter = new FailedRequestBackOffCounter(1, _dateTimeProvider.UtcNow);
+                _backOffCounter.AddOrUpdate(msisdn, counter, (key, value) => new FailedRequestBackOffCounter(value.FailureCount + 1, _dateTimeProvider.UtcNow));
+                return false;
+            }           
         }
 
 
@@ -49,7 +83,7 @@ namespace Flexinets.Radius
             if (_networkIdCache.TryGetValue(msisdn, out cacheEntry))
             {
                 _log.Debug($"Found cache entry {cacheEntry.NetworkId} for msisdn {msisdn}");
-                if (DateTime.UtcNow.Subtract(cacheEntry.DateSet).TotalSeconds < cacheTimeout)
+                if (_dateTimeProvider.UtcNow.Subtract(cacheEntry.DateSet).TotalSeconds < cacheTimeout)
                 {
                     _log.Debug($"Cache entry less than {cacheTimeout} seconds old!");
                     networkId = cacheEntry.NetworkId;
@@ -64,7 +98,7 @@ namespace Flexinets.Radius
                 networkId = GetId(msisdn);
             }
 
-            var entry = new CacheEntry { NetworkId = networkId, DateSet = DateTime.UtcNow };
+            var entry = new CacheEntry { NetworkId = networkId, DateSet = _dateTimeProvider.UtcNow };
             _networkIdCache.AddOrUpdate(msisdn, entry, (s, i) => entry);
 
             _log.Debug($"Refreshed cache entry for msisdn {msisdn}, networkid {networkId}");
