@@ -21,9 +21,9 @@ namespace Flexinets.Radius
         private readonly ConcurrentDictionary<String, CacheEntry> _networkIdCache = new ConcurrentDictionary<String, CacheEntry>();
         private readonly ConcurrentDictionary<String, Task<String>> _pendingApiRequests = new ConcurrentDictionary<String, Task<String>>();
         private readonly ConcurrentDictionary<String, FailedRequestBackOffCounter> _backOffCounter = new ConcurrentDictionary<String, FailedRequestBackOffCounter>();
-        
+
         private NetworkCredential _apiCredential;
-        
+
         private readonly Int32 cacheTimeout = 30;
         private ConcurrentDictionary<String, NetworkEntry> _networkCache;
 
@@ -45,7 +45,7 @@ namespace Flexinets.Radius
 
         public Boolean TryGetNetworkId(String msisdn, out String networkId)
         {
-            networkId = "";
+            networkId = null;
 
             FailedRequestBackOffCounter counter;
             if (_backOffCounter.TryGetValue(msisdn, out counter))
@@ -60,17 +60,16 @@ namespace Flexinets.Radius
             try
             {
                 networkId = GetNetworkId(msisdn);
-
-                // If we get here everything went well, remove the back off counter
                 _backOffCounter.TryRemove(msisdn, out counter);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _log.Error($"Could not get networkid for {msisdn}", ex);
                 counter = new FailedRequestBackOffCounter(1, _dateTimeProvider.UtcNow);
                 _backOffCounter.AddOrUpdate(msisdn, counter, (key, value) => new FailedRequestBackOffCounter(value.FailureCount + 1, _dateTimeProvider.UtcNow));
                 return false;
-            }           
+            }
         }
 
 
@@ -113,40 +112,21 @@ namespace Flexinets.Radius
 
         private String GetId(String msisdn)
         {
-            String networkId = null;            
-
             try
             {
-                networkId = GetNetworkIdFromApi(msisdn).Result;
+                return GetNetworkIdFromApi(msisdn).Result;
             }
             catch (WebException ex)
             {
+                // If the password has been changed, refresh credentials and try again
                 if (ex.Response != null && ((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.Unauthorized)
                 {
                     _log.Warn("Got 401, refreshing API credentials from database and retrying");
                     _apiCredential = GetApiCredentials();
-                    networkId = GetNetworkIdFromApi(msisdn).Result;
+                    return GetNetworkIdFromApi(msisdn).Result;
                 }
-                else
-                {
-                    _log.Fatal($"Could not get networkid for {msisdn}");
-                    throw;
-                }
-            }
-            catch (Exception)
-            {
-                _log.Fatal($"Could not get networkid for {msisdn}");
                 throw;
             }
-
-
-            if (!validNetwork(networkId))
-            {
-                _log.Fatal($"Got invalid networkid {networkId} for msisdn {msisdn}");
-                throw new InvalidOperationException($"Got invalid networkid {networkId} for msisdn {msisdn}");
-            }
-
-            return networkId;
         }
 
 
@@ -157,15 +137,13 @@ namespace Flexinets.Radius
         /// <returns></returns>
         internal async Task<String> GetNetworkIdFromApi(String msisdn)
         {
-            var url = _apiUrl + msisdn;
-
             Task<String> task;
             if (!_pendingApiRequests.TryGetValue(msisdn, out task))
-            {               
+            {
                 _log.Debug($"Starting new api request for msisdn {msisdn}");
                 var client = _webClientFactory.Create();
                 client.Credentials = _apiCredential;
-                task = client.DownloadStringTaskAsync(url);
+                task = client.DownloadStringTaskAsync(_apiUrl + msisdn);
                 _pendingApiRequests.TryAdd(msisdn, task);
             }
             else
@@ -175,16 +153,29 @@ namespace Flexinets.Radius
             var response = await task;
             _pendingApiRequests.TryRemove(msisdn, out task);
 
+            return ParseApiResponseXml(response, msisdn);          
+        }
+
+
+        /// <summary>
+        /// Parse the api response xml and try to find the network id
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="msisdn"></param>
+        /// <returns></returns>
+        private String ParseApiResponseXml(String response, String msisdn)
+        {
             var document = new XmlDocument();
             document.LoadXml(response);
             if (document.GetElementsByTagName("message")[0].InnerText == "ok")
             {
                 var networkId = document.GetElementsByTagName("MCC_MNC")[0].InnerText;
-                //todo add logic for parsing VLR global title in case mccmnc lookup fails?
-                //todo refactor this mess...
+
                 if (!validNetwork(networkId))
                 {
-                    _log.Error($"No valid network id found, VLR_address: {document.GetElementsByTagName("VLR_address")[0].InnerText}");
+                    //todo add logic for parsing VLR global title in case mccmnc lookup fails?
+                    _log.Error($"No valid network id found for {msisdn}, VLR_address: {document.GetElementsByTagName("VLR_address")[0].InnerText}");
+                    throw new InvalidOperationException($"Got invalid networkid {networkId} for msisdn {msisdn}");
                 }
 
                 return networkId;
