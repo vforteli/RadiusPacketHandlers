@@ -17,6 +17,7 @@ namespace Flexinets.Radius
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly String _apiUrl;
         private readonly IWebClientFactory _webClientFactory;
+        private readonly NetworkProvider _networkProvider;
 
         private readonly ConcurrentDictionary<String, CacheEntry> _networkIdCache = new ConcurrentDictionary<String, CacheEntry>();
         private readonly ConcurrentDictionary<String, Task<String>> _pendingApiRequests = new ConcurrentDictionary<String, Task<String>>();
@@ -24,22 +25,21 @@ namespace Flexinets.Radius
 
         private NetworkCredential _apiCredential;
 
-        private readonly Int32 cacheTimeout = 30;
-        private ConcurrentDictionary<String, NetworkEntry> _networkCache;
+        private readonly Int32 cacheTimeout = 30;        
 
 
         /// <summary>
         /// Provider for getting the network id from FL1
         /// </summary>
         /// <param name="contextFactory"></param>
-        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, String apiUrl, IDateTimeProvider dateTimeProvider, IWebClientFactory webClientFactory)
+        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, String apiUrl, IDateTimeProvider dateTimeProvider, IWebClientFactory webClientFactory, NetworkProvider networkProvider)
         {
             _apiUrl = apiUrl;
             _contextFactory = contextFactory;
             _apiCredential = GetApiCredentials();
-            _networkCache = LoadNetworks();
             _dateTimeProvider = dateTimeProvider;
             _webClientFactory = webClientFactory;
+            _networkProvider = networkProvider;
         }
 
 
@@ -80,7 +80,7 @@ namespace Flexinets.Radius
         /// <returns></returns>
         public String GetNetworkId(String msisdn)
         {
-            String networkId;
+            String networkId = null;
 
             CacheEntry cacheEntry;
             _log.Debug($"Getting network id for msisdn {msisdn}");
@@ -92,12 +92,8 @@ namespace Flexinets.Radius
                     _log.Debug($"Cache entry less than {cacheTimeout} seconds old!");
                     networkId = cacheEntry.NetworkId;
                 }
-                else
-                {
-                    networkId = GetId(msisdn);
-                }
             }
-            else
+            if (networkId == null)
             {
                 networkId = GetId(msisdn);
             }
@@ -171,7 +167,7 @@ namespace Flexinets.Radius
             {
                 var networkId = document.GetElementsByTagName("MCC_MNC")[0].InnerText;
 
-                if (!validNetwork(networkId))
+                if (!_networkProvider.IsValidNetwork(networkId))
                 {
                     //todo add logic for parsing VLR global title in case mccmnc lookup fails?
                     _log.Error($"No valid network id found for {msisdn}, VLR_address: {document.GetElementsByTagName("VLR_address")[0].InnerText}");
@@ -183,52 +179,6 @@ namespace Flexinets.Radius
 
             _log.Error(document.ToReadableString());
             throw new InvalidOperationException("NetworkId Api failed, see logs for details");
-        }
-
-
-        /// <summary>
-        /// Load networks from database
-        /// </summary>
-        /// <returns></returns>
-        private ConcurrentDictionary<String, NetworkEntry> LoadNetworks()
-        {
-            using (var db = _contextFactory.GetContext())
-            {
-                var networks = from o in db.Networks
-                               select new NetworkEntry
-                               {
-                                   CountryName = o.countryname,
-                                   NetworkId = o.mccmnc.ToString(),
-                                   NetworkName = o.providername
-                               };
-
-                var directory = new ConcurrentDictionary<String, NetworkEntry>();
-                foreach (var network in networks)
-                {
-                    directory.TryAdd(network.NetworkId, network);
-                }
-                return directory;
-            }
-        }
-
-
-        /// <summary>
-        /// Optimistically verify that the network id returned from the API is valid
-        /// Valid means known to flexinets...
-        /// </summary>
-        /// <param name="networkId"></param>
-        /// <returns></returns>
-        private Boolean validNetwork(String networkId)
-        {
-            if (_networkCache.ContainsKey(networkId))
-            {
-                return true;
-            }
-
-            // Dont take no for an answer, refresh list in case something has been added
-            _networkCache = LoadNetworks();
-
-            return _networkCache.ContainsKey(networkId);
         }
 
 

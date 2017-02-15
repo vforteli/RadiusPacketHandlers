@@ -164,6 +164,7 @@
     <Compile Include="Classes\MockWebClient.cs" />
     <Compile Include="Classes\NetworkEntry.cs" />
     <Compile Include="Classes\NetworkIdProvider.cs" />
+    <Compile Include="Classes\NetworkProvider.cs" />
     <Compile Include="Classes\RadiusDisconnector.cs" />
     <Compile Include="Classes\WebClientFactory.cs" />
     <Compile Include="Classes\WebClientMockFactory.cs" />
