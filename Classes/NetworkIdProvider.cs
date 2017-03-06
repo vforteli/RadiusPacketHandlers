@@ -117,7 +117,7 @@ namespace Flexinets.Radius
                 // If the password has been changed, refresh credentials and try again
                 if (ex.Response != null && ((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    _log.Warn("Got 401, refreshing API credentials from database and retrying");
+                    _log.Warn("Got 401, refreshing API credentials from database and retrying", ex);
                     _apiCredential = GetApiCredentials();
                     return GetNetworkIdFromApi(msisdn).Result;
                 }
@@ -134,22 +134,27 @@ namespace Flexinets.Radius
         internal async Task<String> GetNetworkIdFromApi(String msisdn)
         {
             Task<String> task;
-            if (!_pendingApiRequests.TryGetValue(msisdn, out task))
+            try
             {
-                _log.Debug($"Starting new api request for msisdn {msisdn}");
-                var client = _webClientFactory.Create();
-                client.Credentials = _apiCredential;
-                task = client.DownloadStringTaskAsync(_apiUrl + msisdn);
-                _pendingApiRequests.TryAdd(msisdn, task);
+                if (!_pendingApiRequests.TryGetValue(msisdn, out task))
+                {
+                    _log.Debug($"Starting new api request for msisdn {msisdn}");
+                    var client = _webClientFactory.Create();
+                    client.Credentials = _apiCredential;
+                    task = client.DownloadStringTaskAsync(_apiUrl + msisdn);
+                    _pendingApiRequests.TryAdd(msisdn, task);
+                }
+                else
+                {
+                    _log.Debug($"Waiting for previous api request for msisdn {msisdn}");
+                }
+                var response = await task;
+                return ParseApiResponseXml(response, msisdn);
             }
-            else
+            finally
             {
-                _log.Debug($"Waiting for previous api request for msisdn {msisdn}");
+                _pendingApiRequests.TryRemove(msisdn, out task);
             }
-            var response = await task;
-            _pendingApiRequests.TryRemove(msisdn, out task);
-
-            return ParseApiResponseXml(response, msisdn);          
         }
 
 
