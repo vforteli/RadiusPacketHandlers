@@ -163,6 +163,7 @@
     <Compile Include="Classes\MockDateTimeProvider.cs" />
     <Compile Include="Classes\MockWebClient.cs" />
     <Compile Include="Classes\NetworkEntry.cs" />
+    <Compile Include="Classes\NetworkIdClient.cs" />
     <Compile Include="Classes\NetworkIdProvider.cs" />
     <Compile Include="Classes\NetworkProvider.cs" />
     <Compile Include="Classes\RadiusDisconnector.cs" />

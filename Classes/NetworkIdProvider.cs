@@ -3,10 +3,7 @@ using FlexinetsDBEF;
 using log4net;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
-using System.Xml;
 
 namespace Flexinets.Radius
 {
@@ -15,31 +12,24 @@ namespace Flexinets.Radius
         private readonly ILog _log = LogManager.GetLogger(typeof(NetworkIdProvider));
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly FlexinetsEntitiesFactory _contextFactory;
-        private readonly String _apiUrl;
-        private readonly IWebClientFactory _webClientFactory;
-        private readonly NetworkProvider _networkProvider;
+        private readonly NetworkApiClient _networkApiClient;
 
         private readonly ConcurrentDictionary<String, CacheEntry> _networkIdCache = new ConcurrentDictionary<String, CacheEntry>();
         private readonly ConcurrentDictionary<String, Task<String>> _pendingApiRequests = new ConcurrentDictionary<String, Task<String>>();
         private readonly ConcurrentDictionary<String, FailedRequestBackOffCounter> _backOffCounter = new ConcurrentDictionary<String, FailedRequestBackOffCounter>();
 
-        private NetworkCredential _apiCredential;
-
-        private readonly Int32 cacheTimeout = 30;        
+        private readonly Int32 cacheTimeout = 30;
 
 
         /// <summary>
         /// Provider for getting the network id from FL1
         /// </summary>
         /// <param name="contextFactory"></param>
-        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, String apiUrl, IDateTimeProvider dateTimeProvider, IWebClientFactory webClientFactory, NetworkProvider networkProvider)
+        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, IDateTimeProvider dateTimeProvider, NetworkApiClient networkApiClient)
         {
-            _apiUrl = apiUrl;
             _contextFactory = contextFactory;
-            _apiCredential = GetApiCredentials();
             _dateTimeProvider = dateTimeProvider;
-            _webClientFactory = webClientFactory;
-            _networkProvider = networkProvider;
+            _networkApiClient = networkApiClient;
         }
 
 
@@ -95,7 +85,7 @@ namespace Flexinets.Radius
             }
             if (networkId == null)
             {
-                networkId = GetId(msisdn);
+                networkId = GetNetworkIdFromApi(msisdn).Result;
             }
 
             var entry = new CacheEntry { NetworkId = networkId, DateSet = _dateTimeProvider.UtcNow };
@@ -103,26 +93,6 @@ namespace Flexinets.Radius
 
             _log.Debug($"Refreshed cache entry for msisdn {msisdn}, networkid {networkId}");
             return networkId;
-        }
-
-
-        private String GetId(String msisdn)
-        {
-            try
-            {
-                return GetNetworkIdFromApi(msisdn).Result;
-            }
-            catch (WebException ex)
-            {
-                // If the password has been changed, refresh credentials and try again
-                if (ex.Response != null && ((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    _log.Warn("Got 401, refreshing API credentials from database and retrying", ex);
-                    _apiCredential = GetApiCredentials();
-                    return GetNetworkIdFromApi(msisdn).Result;
-                }
-                throw;
-            }
         }
 
 
@@ -139,67 +109,18 @@ namespace Flexinets.Radius
                 if (!_pendingApiRequests.TryGetValue(msisdn, out task))
                 {
                     _log.Debug($"Starting new api request for msisdn {msisdn}");
-                    var client = _webClientFactory.Create();
-                    client.Credentials = _apiCredential;
-                    task = client.DownloadStringTaskAsync(_apiUrl + msisdn);
+                    task = _networkApiClient.GetId(msisdn);
                     _pendingApiRequests.TryAdd(msisdn, task);
                 }
                 else
                 {
                     _log.Debug($"Waiting for previous api request for msisdn {msisdn}");
                 }
-                var response = await task;
-                return ParseApiResponseXml(response, msisdn);
+                return await task;
             }
             finally
             {
                 _pendingApiRequests.TryRemove(msisdn, out task);
-            }
-        }
-
-
-        /// <summary>
-        /// Parse the api response xml and try to find the network id
-        /// </summary>
-        /// <param name="response"></param>
-        /// <param name="msisdn"></param>
-        /// <returns></returns>
-        private String ParseApiResponseXml(String response, String msisdn)
-        {
-            var document = new XmlDocument();
-            document.LoadXml(response);
-            if (document.GetElementsByTagName("message")[0].InnerText == "ok")
-            {
-                var networkId = document.GetElementsByTagName("MCC_MNC")[0].InnerText;
-
-                if (!_networkProvider.IsValidNetwork(networkId))
-                {
-                    //todo add logic for parsing VLR global title in case mccmnc lookup fails?
-                    _log.Error($"No valid network id found for {msisdn}, VLR_address: {document.GetElementsByTagName("VLR_address")[0].InnerText}");
-                    throw new InvalidOperationException($"Got invalid networkid {networkId} for msisdn {msisdn}");
-                }
-
-                return networkId;
-            }
-
-            _log.Error(document.ToReadableString());
-            throw new InvalidOperationException("NetworkId Api failed, see logs for details");
-        }
-
-
-        /// <summary>
-        /// Get the credentials for FL1 network id API
-        /// </summary>
-        /// <returns></returns>
-        private NetworkCredential GetApiCredentials()
-        {
-            using (var db = _contextFactory.GetContext())
-            {
-                return new NetworkCredential
-                {
-                    UserName = db.FL1Settings.SingleOrDefault(o => o.Name == "ApiUsername").Value,
-                    Password = db.FL1Settings.SingleOrDefault(o => o.Name == "ApiPassword").Value
-                };
             }
         }
     }
