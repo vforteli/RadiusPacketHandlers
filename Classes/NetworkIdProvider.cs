@@ -11,7 +11,6 @@ namespace Flexinets.Radius
     {
         private readonly ILog _log = LogManager.GetLogger(typeof(NetworkIdProvider));
         private readonly IDateTimeProvider _dateTimeProvider;
-        private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly NetworkApiClient _networkApiClient;
 
         private readonly ConcurrentDictionary<String, CacheEntry> _networkIdCache = new ConcurrentDictionary<String, CacheEntry>();
@@ -25,9 +24,8 @@ namespace Flexinets.Radius
         /// Provider for getting the network id from FL1
         /// </summary>
         /// <param name="contextFactory"></param>
-        public NetworkIdProvider(FlexinetsEntitiesFactory contextFactory, IDateTimeProvider dateTimeProvider, NetworkApiClient networkApiClient)
+        public NetworkIdProvider(IDateTimeProvider dateTimeProvider, NetworkApiClient networkApiClient)
         {
-            _contextFactory = contextFactory;
             _dateTimeProvider = dateTimeProvider;
             _networkApiClient = networkApiClient;
         }

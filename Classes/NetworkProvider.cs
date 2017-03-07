@@ -1,4 +1,5 @@
 ﻿using FlexinetsDBEF;
+using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,13 +12,21 @@ namespace Flexinets.Radius
     public class NetworkProvider
     {
         private readonly FlexinetsEntitiesFactory _contextFactory;
-        private ConcurrentDictionary<String, NetworkEntry> _networkCache;
+        private ConcurrentDictionary<String, NetworkEntry> _networkCache = new ConcurrentDictionary<String, NetworkEntry>();
+        private readonly ILog _log = LogManager.GetLogger(typeof(NetworkProvider));
 
 
         public NetworkProvider(FlexinetsEntitiesFactory contextFactory)
         {
             _contextFactory = contextFactory;
-            _networkCache = LoadNetworks();
+            try
+            {
+                _networkCache = LoadNetworks();
+            }
+            catch (Exception ex)
+            {
+                _log.Error("Unable to load networks to cache, check db", ex);
+            }
         }
 
 

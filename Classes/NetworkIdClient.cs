@@ -28,7 +28,15 @@ namespace Flexinets.Radius.PacketHandlers
             _webClientFactory = webClientFactory;
             _networkProvider = networkProvider;
             _apiUrl = apiUrl;
-            ApiCredential = GetApiCredentials();
+
+            try
+            {
+                ApiCredential = GetApiCredentials();                
+            }
+            catch (Exception ex)
+            {
+                _log.Error("Unable to get api credentials from db", ex);
+            }
         }
 
 
@@ -36,7 +44,11 @@ namespace Flexinets.Radius.PacketHandlers
         {
             try
             {
-                return await GetNetworkIdFromApi(msisdn);
+                if (ApiCredential == null)
+                {
+                    ApiCredential = GetApiCredentials();
+                }
+                return await GetNetworkIdFromApi(msisdn, _apiUrl, ApiCredential);
             }
             catch (WebException ex)
             {
@@ -45,7 +57,7 @@ namespace Flexinets.Radius.PacketHandlers
                 {
                     _log.Warn("Got 401, refreshing API credentials from database and retrying");
                     ApiCredential = GetApiCredentials();
-                    return await GetNetworkIdFromApi(msisdn);
+                    return await GetNetworkIdFromApi(msisdn, _apiUrl, ApiCredential);
                 }
                 throw;
             }
@@ -57,11 +69,10 @@ namespace Flexinets.Radius.PacketHandlers
         /// </summary>
         /// <param name="msisdn"></param>
         /// <returns></returns>
-        private async Task<String> GetNetworkIdFromApi(String msisdn)
-        {
-            var client = _webClientFactory.Create();
-            client.Credentials = ApiCredential;
-            var response = await client.DownloadStringTaskAsync(_apiUrl + msisdn);
+        private async Task<String> GetNetworkIdFromApi(String msisdn, String apiUrl, NetworkCredential apiCredential)
+        {            
+            var client = _webClientFactory.Create(apiCredential);
+            var response = await client.DownloadStringTaskAsync(apiUrl + msisdn);
             return ParseApiResponseXml(response, msisdn);
         }
 
