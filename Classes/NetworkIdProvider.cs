@@ -1,5 +1,4 @@
 ﻿using Flexinets.Radius.PacketHandlers;
-using FlexinetsDBEF;
 using log4net;
 using System;
 using System.Collections.Concurrent;
@@ -70,9 +69,8 @@ namespace Flexinets.Radius
         {
             String networkId = null;
 
-            CacheEntry cacheEntry;
             _log.Debug($"Getting network id for msisdn {msisdn}");
-            if (_networkIdCache.TryGetValue(msisdn, out cacheEntry))
+            if (_networkIdCache.TryGetValue(msisdn, out CacheEntry cacheEntry))
             {
                 _log.Debug($"Found cache entry {cacheEntry.NetworkId} for msisdn {msisdn}");
                 if (_dateTimeProvider.UtcNow.Subtract(cacheEntry.DateSet).TotalSeconds < cacheTimeout)

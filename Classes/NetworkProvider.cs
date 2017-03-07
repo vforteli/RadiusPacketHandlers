@@ -4,8 +4,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Flexinets.Radius
 {
@@ -39,18 +37,14 @@ namespace Flexinets.Radius
             using (var db = _contextFactory.GetContext())
             {
                 var networks = from o in db.Networks
-                               select new NetworkEntry
+                               select new KeyValuePair<String, NetworkEntry>(o.mccmnc.ToString(), new NetworkEntry
                                {
                                    CountryName = o.countryname,
                                    NetworkId = o.mccmnc.ToString(),
                                    NetworkName = o.providername
-                               };
+                               });
 
-                var directory = new ConcurrentDictionary<String, NetworkEntry>();
-                foreach (var network in networks)
-                {
-                    directory.TryAdd(network.NetworkId, network);
-                }
+                var directory = new ConcurrentDictionary<String, NetworkEntry>(networks);
                 return directory;
             }
         }
@@ -64,13 +58,11 @@ namespace Flexinets.Radius
         /// <returns></returns>
         public Boolean IsValidNetwork(String networkId)
         {
-            if (_networkCache.ContainsKey(networkId))
+            if (!_networkCache.ContainsKey(networkId))
             {
-                return true;
+                // Dont take no for an answer, refresh list in case something has been added
+                _networkCache = LoadNetworks();
             }
-
-            // Dont take no for an answer, refresh list in case something has been added
-            _networkCache = LoadNetworks();
 
             return _networkCache.ContainsKey(networkId);
         }
