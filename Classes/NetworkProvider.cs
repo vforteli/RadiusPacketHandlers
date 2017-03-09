@@ -36,7 +36,7 @@ namespace Flexinets.Radius
         {
             using (var db = _contextFactory.GetContext())
             {
-                var networks = from o in db.Networks
+                var networks = from o in db.Networks.ToList()
                                select new KeyValuePair<String, NetworkEntry>(o.mccmnc.ToString(), new NetworkEntry
                                {
                                    CountryName = o.countryname,
@@ -44,8 +44,7 @@ namespace Flexinets.Radius
                                    NetworkName = o.providername
                                });
 
-                var directory = new ConcurrentDictionary<String, NetworkEntry>(networks);
-                return directory;
+                return new ConcurrentDictionary<String, NetworkEntry>(networks);
             }
         }
 
