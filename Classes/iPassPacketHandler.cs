@@ -152,6 +152,20 @@ namespace Flexinets.Radius
             if (proxyresponse.HasValue)
             {
                 _log.Info($"Got response from proxy for username {usernamedomain}");
+
+                // todo refactor...
+                if (proxyresponse == PacketCode.AccessReject)
+                {
+                    _failures.Add(usernamedomain);
+                }
+                else if (proxyresponse == PacketCode.AccessAccept)
+                {
+                    if (_failures.Contains(usernamedomain))
+                    {
+                        _log.Warn($"Username {usernamedomain} authenticated after failures");
+                        _failures.Remove(usernamedomain);
+                    }
+                }
                 return packet.CreateResponsePacket(proxyresponse.Value);
             }           
             else
