@@ -89,6 +89,12 @@ namespace Flexinets.Radius.PacketHandlers
                         {
                             _log.Warn($"Got reject for user {username} from proxy");
                         }
+
+                        if (!(content.Contains("reject") || content.Contains("accept")))
+                        {
+                            _log.Error($"Invalid proxy response: {content}");
+                            throw new InvalidOperationException("Something went wrong with proxy");
+                        }
                     }
 
                     return PacketCode.AccessReject;
