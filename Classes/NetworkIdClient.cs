@@ -2,7 +2,7 @@
 using log4net;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
+using System.Data.Entity;
 using System.Net;
 using System.Threading.Tasks;
 using System.Xml;
@@ -31,7 +31,7 @@ namespace Flexinets.Radius.PacketHandlers
 
             try
             {
-                ApiCredential = GetApiCredentials();                
+                ApiCredential = GetApiCredentialsAsync();
             }
             catch (Exception ex)
             {
@@ -46,7 +46,7 @@ namespace Flexinets.Radius.PacketHandlers
             {
                 if (ApiCredential == null)
                 {
-                    ApiCredential = GetApiCredentials();
+                    ApiCredential = await GetApiCredentialsAsync();
                 }
                 return await GetNetworkIdFromApi(msisdn, _apiUrl, ApiCredential);
             }
@@ -56,7 +56,7 @@ namespace Flexinets.Radius.PacketHandlers
                 if (ex.Response != null && ((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.Unauthorized)
                 {
                     _log.Warn("Got 401, refreshing API credentials from database and retrying");
-                    ApiCredential = GetApiCredentials();
+                    ApiCredential = await GetApiCredentialsAsync();
                     return await GetNetworkIdFromApi(msisdn, _apiUrl, ApiCredential);
                 }
                 throw;
@@ -70,7 +70,7 @@ namespace Flexinets.Radius.PacketHandlers
         /// <param name="msisdn"></param>
         /// <returns></returns>
         private async Task<String> GetNetworkIdFromApi(String msisdn, String apiUrl, NetworkCredential apiCredential)
-        {            
+        {
             var client = _webClientFactory.Create(apiCredential);
             var response = await client.DownloadStringTaskAsync(apiUrl + msisdn);
             return ParseApiResponseXml(response, msisdn);
@@ -110,14 +110,14 @@ namespace Flexinets.Radius.PacketHandlers
         /// Get the credentials for FL1 network id API
         /// </summary>
         /// <returns></returns>
-        private NetworkCredential GetApiCredentials()
+        private async Task<NetworkCredential> GetApiCredentialsAsync()
         {
             using (var db = _contextFactory.GetContext())
             {
                 return new NetworkCredential
                 {
-                    UserName = db.FL1Settings.SingleOrDefault(o => o.Name == "ApiUsername").Value,
-                    Password = db.FL1Settings.SingleOrDefault(o => o.Name == "ApiPassword").Value
+                    UserName = (await db.FL1Settings.SingleOrDefaultAsync(o => o.Name == "ApiUsername")).Value,
+                    Password = (await db.FL1Settings.SingleOrDefaultAsync(o => o.Name == "ApiPassword")).Value
                 };
             }
         }
