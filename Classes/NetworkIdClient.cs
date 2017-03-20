@@ -31,7 +31,7 @@ namespace Flexinets.Radius.PacketHandlers
 
             try
             {
-                ApiCredential = GetApiCredentialsAsync();
+                ApiCredential = GetApiCredentialsAsync().Result;
             }
             catch (Exception ex)
             {
