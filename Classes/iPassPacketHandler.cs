@@ -194,20 +194,16 @@ namespace Flexinets.Radius
                         else if (user.status != 1)
                         {
                             _log.Warn($"Username {usernamedomain} is not active, email: {user.email}");
-                            var location = packet.GetAttribute<String>("Ipass-Location-Description");
-                            if (!String.IsNullOrEmpty(location))
-                            {
-                                _log.Warn($"iPass location description: {location}");
-                            }
                         }
                         else
                         {
-                            _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters, email: {user.email}");
-                            var location = packet.GetAttribute<String>("Ipass-Location-Description");
-                            if (!String.IsNullOrEmpty(location))
-                            {
-                                _log.Warn($"iPass location description: {location}");
-                            }
+                            _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters, email: {user.email}");                         
+                        }
+
+                        var location = packet.GetAttribute<String>("Ipass-Location-Description");
+                        if (!String.IsNullOrEmpty(location))
+                        {
+                            _log.Warn($"iPass location description: {location}");
                         }
 
                         _failures.Add(usernamedomain);
