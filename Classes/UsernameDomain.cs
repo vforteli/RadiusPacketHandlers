@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Flexinets.Radius
 {
@@ -22,6 +17,29 @@ namespace Flexinets.Radius
         }
 
 
+        /// <summary>
+        /// Parse a raw username and optionally trim additional domains from the username part
+        /// </summary>
+        /// <param name="rawusername"></param>
+        /// <param name="stripUsername"></param>
+        /// <returns></returns>
+        public static UsernameDomain Parse(String rawusername, Boolean stripUsername)
+        {
+            var usernamedomain = Parse(rawusername);
+            if (stripUsername && usernamedomain.Username.Contains('@'))
+            {
+                usernamedomain.Username = usernamedomain.Username.Substring(0, usernamedomain.Username.IndexOf('@'));
+            }        
+
+            return usernamedomain;
+        }
+
+
+        /// <summary>
+        /// Parse a raw username string and split
+        /// </summary>
+        /// <param name="rawusername"></param>
+        /// <returns></returns>
         public static UsernameDomain Parse(String rawusername)
         {
             if (rawusername.Contains("@"))
@@ -40,6 +58,10 @@ namespace Flexinets.Radius
         }
 
 
+        /// <summary>
+        /// Returns the username@domain
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return $"{Username ?? ""}@{Domain ?? ""}";

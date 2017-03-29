@@ -26,36 +26,34 @@ namespace Flexinets.Radius.PacketHandlers
         /// <summary>
         /// Proxy iPass authentication to an external server
         /// </summary>
-        /// <param name="username"></param>
+        /// <param name="rawusername"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public PacketCode? ProxyAuthentication(String username, String password)
-        {
-            var usernamedomain = UsernameDomain.Parse(username);
-
+        public PacketCode? ProxyAuthentication(String rawusername, String password)
+        {            
             using (var db = _contextFactory.GetContext())
             {
+                var usernamedomain = UsernameDomain.Parse(rawusername, true);
                 var server = db.Roamservers.FirstOrDefault(o => o.domain == usernamedomain.Domain);
                 if (server != null)
                 {
-                    _log.Debug($"Found proxy server {server.host} for username {username}");
+                    _log.Debug($"Found proxy server {server.host} for username {rawusername}");
 
                     if (!String.IsNullOrEmpty(server.rewritedomain))
                     {
-                        var rewriteusername = UsernameDomain.Parse(username);
-                        rewriteusername.Domain = server.rewritedomain;
-                        _log.Debug($"Rewriting username from {username} to {rewriteusername}");
-                        username = rewriteusername.FullUsername;
+                        usernamedomain.Domain = server.rewritedomain;
+                        _log.Debug($"Rewriting username from {rawusername} to {usernamedomain}");
+                        rawusername = usernamedomain.FullUsername;
                     }
 
                     ProcessStartInfo startinfo;
                     if (server.uselegacy)
                     {
-                        startinfo = ProxyAuthenticationSsl(username, password, server.host);
+                        startinfo = ProxyAuthenticationSsl(rawusername, password, server.host);
                     }
                     else
                     {
-                        startinfo = ProxyAuthenticationNew(username, password, server.host);
+                        startinfo = ProxyAuthenticationNew(rawusername, password, server.host);
                     }
 
                     using (var process = new Process
@@ -79,15 +77,15 @@ namespace Flexinets.Radius.PacketHandlers
                         }
                         if (content.Contains("LDAP User found but memberOf validation failed"))
                         {
-                            _log.Warn($"MemberOf failed for user {username}");
+                            _log.Warn($"MemberOf failed for user {rawusername}");
                         }
                         if (content.Contains("Message: LDAP search found no entries for this user"))
                         {
-                            _log.Warn($"Username {username} not found");
+                            _log.Warn($"Username {rawusername} not found");
                         }
                         if (content.Contains("Status: reject"))
                         {
-                            _log.Warn($"Got reject for user {username} from proxy");
+                            _log.Warn($"Got reject for user {rawusername} from proxy");
                         }
 
                         if (!(content.Contains("reject") || content.Contains("accept")))
