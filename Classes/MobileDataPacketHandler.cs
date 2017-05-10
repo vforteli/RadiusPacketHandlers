@@ -44,6 +44,12 @@ namespace Flexinets.Radius
             {
                 return Interim(packet);
             }
+            else if (packet.Code == PacketCode.StatusServer)
+            {
+                var responsePacket = packet.CreateResponsePacket(PacketCode.AccessAccept);
+                responsePacket.AddAttribute("Reply-Message", "RADIUS Server up");
+                return responsePacket;
+            }
 
             throw new InvalidOperationException($"Nothing configured for {packet.Code}");
         }
