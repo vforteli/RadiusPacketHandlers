@@ -12,8 +12,10 @@ namespace Flexinets.Radius
 
         public IWebClient Create()
         {
-            var client = new MockWebClient();
-            client.Response = Response;
+            var client = new MockWebClient()
+            {
+                Response = Response
+            };
             return client;
         }
 
