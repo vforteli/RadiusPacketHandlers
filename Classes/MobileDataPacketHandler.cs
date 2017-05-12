@@ -43,13 +43,7 @@ namespace Flexinets.Radius
             else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type") == AcctStatusTypes.InterimUpdate)
             {
                 return Interim(packet);
-            }
-            else if (packet.Code == PacketCode.StatusServer)
-            {
-                var responsePacket = packet.CreateResponsePacket(PacketCode.AccessAccept);
-                responsePacket.AddAttribute("Reply-Message", "RADIUS Server up");
-                return responsePacket;
-            }
+            }            
 
             throw new InvalidOperationException($"Nothing configured for {packet.Code}");
         }
