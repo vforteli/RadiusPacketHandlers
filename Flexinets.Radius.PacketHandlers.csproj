@@ -158,6 +158,7 @@
     <Compile Include="Classes\iPassServerInfo.cs" />
     <Compile Include="Classes\IWebClient.cs" />
     <Compile Include="Classes\IWebClientFactory.cs" />
+    <Compile Include="Classes\MobileDataPacketHandlerV2.cs" />
     <Compile Include="Classes\MobileDataPacketHandler.cs" />
     <Compile Include="Classes\MockDateTimeProvider.cs" />
     <Compile Include="Classes\MockWebClient.cs" />
