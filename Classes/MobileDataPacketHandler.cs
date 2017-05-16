@@ -32,15 +32,15 @@ namespace Flexinets.Radius
             {
                 return Authenticate(packet);
             }
-            else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type") == AcctStatusTypes.Start)
+            else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusType>("Acct-Status-Type") == AcctStatusType.Start)
             {
                 return Start(packet);
             }
-            else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type") == AcctStatusTypes.Stop)
+            else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusType>("Acct-Status-Type") == AcctStatusType.Stop)
             {
                 return Stop(packet);
             }
-            else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type") == AcctStatusTypes.InterimUpdate)
+            else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusType>("Acct-Status-Type") == AcctStatusType.InterimUpdate)
             {
                 return Interim(packet);
             }            

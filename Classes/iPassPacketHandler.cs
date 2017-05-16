@@ -45,8 +45,8 @@ namespace Flexinets.Radius
         /// <returns></returns>
         private IRadiusPacket HandleAccountingPacket(IRadiusPacket packet)
         {
-            var acctStatusType = packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type");
-            if (acctStatusType == AcctStatusTypes.Start || acctStatusType == AcctStatusTypes.Stop)
+            var acctStatusType = packet.GetAttribute<AcctStatusType>("Acct-Status-Type");
+            if (acctStatusType == AcctStatusType.Start || acctStatusType == AcctStatusType.Stop)
             {
                 var usernamedomain = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
                 var nodeid = GetUserNodeId(usernamedomain.Username, usernamedomain.Domain);
@@ -60,7 +60,7 @@ namespace Flexinets.Radius
                             username = usernamedomain.Username,
                             realm = usernamedomain.Domain,
                             node_id = nodeid,
-                            ACCTSTATUSTYPE = (packet.GetAttribute<AcctStatusTypes>("Acct-Status-Type")).ToString(),
+                            ACCTSTATUSTYPE = (packet.GetAttribute<AcctStatusType>("Acct-Status-Type")).ToString(),
                             ACCTINPUTOCTETS = Convert.ToUInt32(packet.GetAttribute<UInt32?>("Acct-Input-Octets")),
                             ACCTOUTPUTOCTETS = Convert.ToUInt32(packet.GetAttribute<UInt32?>("Acct-Output-Octets")),
                             ACCTSESSIONID = packet.GetAttribute<String>("Acct-Session-Id"),
@@ -85,7 +85,7 @@ namespace Flexinets.Radius
                     _log.Error("Something went wrong", ex);
                 }
 
-                if (acctStatusType == AcctStatusTypes.Start)
+                if (acctStatusType == AcctStatusType.Start)
                 {
                     try
                     {
@@ -111,7 +111,7 @@ namespace Flexinets.Radius
                         _log.Info("Cannot insert duplicate in radiatoronline");
                     }
                 }
-                if (acctStatusType == AcctStatusTypes.Stop)
+                if (acctStatusType == AcctStatusType.Stop)
                 {
                     try
                     {
