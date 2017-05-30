@@ -12,11 +12,11 @@ namespace Flexinets.Radius
     {
         private readonly FlexinetsEntitiesFactory _contextFactory;
         private readonly ILog _log = LogManager.GetLogger(typeof(MobileDataPacketHandlerV2));
-        private readonly RadiusDisconnector _disconnector;
+        private readonly RadiusDisconnectorV2 _disconnector;
         private readonly WelcomeSender _welcomeSender;
         
 
-        public MobileDataPacketHandlerV2(FlexinetsEntitiesFactory contextFactory, WelcomeSender welcomeSender, RadiusDisconnector disconnector)
+        public MobileDataPacketHandlerV2(FlexinetsEntitiesFactory contextFactory, WelcomeSender welcomeSender, RadiusDisconnectorV2 disconnector)
         {
             _disconnector = disconnector;
             _welcomeSender = welcomeSender;
@@ -51,6 +51,16 @@ namespace Flexinets.Radius
         {
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var networkid = packet.GetAttribute<String>("3GPP-GGSN-MCC-MNC");
+
+            // todo testing...
+            var imsi = packet.GetAttribute<String>("3GPP-IMSI");
+            if (imsi != null && imsi == "232010850076976")
+            {
+                _log.Warn("Authenticated test sim with new packet handelr");
+                var response = packet.CreateResponsePacket(PacketCode.AccessAccept);
+                response.AddAttribute("Acct-Interim-Interval", 60);
+                return response;
+            }
 
             _log.Debug($"Handling authentication packet for {msisdn} on network {msisdn}");
             using (var db = _contextFactory.GetContext())
@@ -96,86 +106,25 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Start(IRadiusPacket packet)
         {
-            throw new NotImplementedException();
-            /*
-            var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
-            var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
-            var acctStatusType = "Start";    // duuh
-
-            _log.Debug($"Handling start packet for {msisdn} with AcctSessionId {acctSessionId}");
-            using (var db = _contextFactory.GetContext())
-            {
-                db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, null);
-            }
-
-            Task.Run(() => _welcomeSender.CheckWelcomeSms(msisdn));
+            // todo implement
+            _log.Warn("Accounting start on new mbb packet handler");
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
-            */
         }
 
 
         private IRadiusPacket Interim(IRadiusPacket packet)
         {
-            throw new NotImplementedException();
-            /*
-            var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
-            var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
-            var acctStatusType = "Alive";    // duuh
-            var acctInputOctets = packet.GetAttribute<UInt32>("Acct-Input-Octets");
-            var acctOutputOctets = packet.GetAttribute<UInt32>("Acct-Output-Octets");
-            var acctSessionTime = packet.GetAttribute<UInt32>("Acct-Session-Time");
-            var acctInputGigawords = packet.GetAttribute<UInt32?>("Acct-Input-Gigawords");
-            var acctOutputGigawords = packet.GetAttribute<UInt32?>("Acct-Output-Gigawords");
-            var nasIpAddress = packet.GetAttribute<IPAddress>("NAS-IP-Address");
-
-            _log.Debug($"Handling interim packet for {msisdn} with AcctSessionId {acctSessionId}");
-            using (var db = _contextFactory.GetContext())
-            {
-                db.AccountingInterim(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, acctInputOctets, acctOutputOctets,
-                    (int)acctSessionTime, acctInputGigawords, acctOutputGigawords);
-            }
-
-
-
-            Task.Run(() =>
-            {
-                if (_disconnector.CheckDisconnect(acctSessionId))
-                {
-                    _disconnector.SendPoD(nasIpAddress.ToString(), 1700, acctSessionId);
-                }
-            });
-
+            // todo implement
+            _log.Warn("Accounting interim on new mbb packet handler");
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
-            */
         }
 
 
         private IRadiusPacket Stop(IRadiusPacket packet)
         {
-            throw new NotImplementedException();
-            /*
-            var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
-            var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
-            var acctStatusType = "Stop";    // duuh
-            var acctInputOctets = packet.GetAttribute<UInt32>("Acct-Input-Octets");
-            var acctOutputOctets = packet.GetAttribute<UInt32>("Acct-Output-Octets");
-            var acctSessionTime = packet.GetAttribute<UInt32>("Acct-Session-Time");
-            var acctTerminateCause = packet.GetAttribute<UInt32>("Acct-Terminate-Cause");   // oh crap, guess i need values as well...
-            var acctInputGigawords = packet.GetAttribute<UInt32?>("Acct-Input-Gigawords");
-            var acctOutputGigawords = packet.GetAttribute<UInt32?>("Acct-Output-Gigawords");
-
-            _log.Debug($"Handling stop packet for {msisdn} with AcctSessionId {acctSessionId}");
-            using (var db = _contextFactory.GetContext())
-            {
-                db.AccountingStop(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, acctInputOctets, acctOutputOctets,
-                    (int)acctSessionTime, acctTerminateCause.ToString(), acctInputGigawords, acctOutputGigawords);
-            }
-
+            // todo implement
+            _log.Warn("Accounting stop on new mbb packet handler");
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
-            */
         }
 
 

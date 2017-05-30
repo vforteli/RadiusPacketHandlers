@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://webservice.tag.crm.comarch.com/" targetNamespace="http://webservice.tag.crm.comarch.com/" version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="businessUnit" type="tns:businessUnit" />
+  <xs:element name="businessUnitWritable" type="tns:businessUnitWritable" />
+  <xs:element name="contactPerson" type="tns:contactPerson" />
+  <xs:element name="customer" type="tns:customer" />
+  <xs:element name="customerWritable" type="tns:customerWritable" />
+  <xs:element name="user" type="tns:user" />
+  <xs:complexType name="requestResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="abstractResult" abstract="true">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="errorDescription" type="xs:string" />
+      <xs:element minOccurs="0" name="resultCode" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="simOnlineInformationResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="SIMs">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:simOnlineInformation" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="simOnlineInformation">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:simInformation">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="ipaddress" type="xs:string" />
+          <xs:element minOccurs="0" name="sessionStateCode" type="xs:long" />
+          <xs:element minOccurs="0" name="simStateCode" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="simInformation" abstract="true">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="iccid" type="xs:string" />
+      <xs:element minOccurs="0" name="imsi" type="xs:string" />
+      <xs:element minOccurs="0" name="msisdn" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="credentials">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:tagEntity">
+        <xs:sequence>
+          <xs:element name="login" type="xs:string" />
+          <xs:element name="newPassword" type="xs:string" />
+          <xs:element name="oldPassword" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="tagEntity" abstract="true">
+    <xs:sequence>
+      <xs:element default="-1" name="id" type="xs:long" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="serviceProfilesResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="serviceprofiles">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:serviceProfile" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="serviceProfile">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:tagEntity">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="name" type="xs:string" />
+          <xs:element minOccurs="0" name="partyRoleId" type="xs:long" />
+          <xs:element minOccurs="0" name="raisableByTrigger" type="xs:boolean" />
+          <xs:element minOccurs="0" name="raisableForActivation" type="xs:boolean" />
+          <xs:element minOccurs="0" name="raisableManual" type="xs:boolean" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="user">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:tagEntity">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="additionalAttr1" type="xs:string" />
+          <xs:element minOccurs="0" name="additionalAttr2" type="xs:string" />
+          <xs:element name="email" type="xs:string" />
+          <xs:element name="firstName" type="xs:string" />
+          <xs:element minOccurs="0" name="hierarchy" type="xs:string" />
+          <xs:element name="lastName" type="xs:string" />
+          <xs:element name="location" type="xs:string" />
+          <xs:element name="login" type="xs:string" />
+          <xs:element name="middleName" type="xs:string" />
+          <xs:element default="-1" name="partyRoleId" type="xs:long" />
+          <xs:element minOccurs="0" default="na" name="password" type="xs:string" />
+          <xs:element minOccurs="0" name="roles">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element maxOccurs="unbounded" name="item" type="xs:string" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element default="false" name="useApi" type="xs:boolean" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="costCenterResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="costcenters">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:costCenter" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="costCenter">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:costCenterWritable">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="businessUnitId" type="xs:long" />
+          <xs:element minOccurs="0" name="createdBy" type="xs:long" />
+          <xs:element minOccurs="0" name="creationDate" type="xs:dateTime" />
+          <xs:element minOccurs="0" name="numberOfActiveSIMs" type="xs:long" />
+          <xs:element minOccurs="0" name="numberOfSIMs" type="xs:long" />
+          <xs:element minOccurs="0" name="statusCode" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="costCenterWritable">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:tagEntity">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="comment" type="xs:string" />
+          <xs:element minOccurs="0" name="name" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="usersResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="users">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:user" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="isAvailableResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="unbounded" name="content" type="tns:serviceAvailable" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="serviceAvailable">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="errorMessage" type="xs:string" />
+      <xs:element minOccurs="0" name="isAvailable" type="xs:boolean" />
+      <xs:element minOccurs="0" name="serviceName" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="businessUnitWritable">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:tagEntity">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="contact" type="tns:contactPerson" />
+          <xs:element minOccurs="0" name="deliveryAddress" type="tns:address" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="contactPerson">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="eMail" type="xs:string" />
+      <xs:element minOccurs="0" name="fax" type="xs:string" />
+      <xs:element minOccurs="0" name="firstName" type="xs:string" />
+      <xs:element minOccurs="0" name="lastName" type="xs:string" />
+      <xs:element default="PREFERRED_COMMUNICATION_CHANNEL_TYPE.EMAIL" name="preferredCommunicationChannelCode" type="xs:string" />
+      <xs:element default="CONTACT_PERSON_SALUTATION.MR" name="salutationCode" type="xs:string" />
+      <xs:element minOccurs="0" name="telephone" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="address">
+    <xs:sequence>
+      <xs:element name="city" type="xs:string" />
+      <xs:element name="countryCode" type="xs:string" />
+      <xs:element minOccurs="0" name="name" type="xs:string" />
+      <xs:element name="postalCode" type="xs:string" />
+      <xs:element name="state" type="xs:string" />
+      <xs:element name="street" type="xs:string" />
+      <xs:element name="streetNumber" type="xs:string" />
+      <xs:element minOccurs="0" name="surname" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="simOfflineInformationResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="SIMs">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:simOfflineInformation" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="simOfflineInformation">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:simInformation">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="businessUnitId" type="xs:long" />
+          <xs:element minOccurs="0" maxOccurs="unbounded" name="businessUnitLabelsName" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="businessUnitName" type="xs:string" />
+          <xs:element minOccurs="0" name="costCenterId" type="xs:long" />
+          <xs:element minOccurs="0" name="costCenterName" type="xs:string" />
+          <xs:element minOccurs="0" maxOccurs="unbounded" name="customerLabelsName" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="operatorCountryId" type="xs:long" />
+          <xs:element minOccurs="0" name="operatorCountryName" type="xs:string" />
+          <xs:element minOccurs="0" name="resellerId" type="xs:long" />
+          <xs:element minOccurs="0" name="resellerName" type="xs:string" />
+          <xs:element minOccurs="0" name="serviceProfileId" type="xs:long" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="createTemplateLabel">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="description" type="xs:string" />
+      <xs:element name="name" type="xs:string" />
+      <xs:element name="ownerId" type="xs:long" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="customerWritable">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:tagEntity">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="contact" type="tns:contactPerson" />
+          <xs:element minOccurs="0" name="deliveryAddress" type="tns:address" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="changeServiceProfileResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="unbounded" name="imsis" nillable="true" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="customersResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="customers">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:customer" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="customer">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:customerWritable">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="billingAddress" type="tns:address" />
+          <xs:element minOccurs="0" name="businessUnits">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="xs:long" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="companyName" type="xs:string" />
+          <xs:element minOccurs="0" name="createdBy" type="xs:long" />
+          <xs:element minOccurs="0" name="customerAddress" type="tns:address" />
+          <xs:element name="customerStatus" type="xs:string" />
+          <xs:element minOccurs="0" name="debtorNumber" type="xs:string" />
+          <xs:element minOccurs="0" name="frameContractId" type="xs:string" />
+          <xs:element minOccurs="0" name="invoicingLevelCode" type="xs:string" />
+          <xs:element minOccurs="0" name="overallContractBinding" type="xs:long" />
+          <xs:element minOccurs="0" name="paymentTermsCode" type="xs:string" />
+          <xs:element minOccurs="0" name="projectDescription" type="xs:string" />
+          <xs:element minOccurs="0" name="segmentCode" type="xs:string" />
+          <xs:element minOccurs="0" name="signatureDate" type="xs:dateTime" />
+          <xs:element minOccurs="0" name="simContractBinding" type="xs:long" />
+          <xs:element minOccurs="0" name="statusCode" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="templateLabelsResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="templateLabels">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:templateLabel" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="templateLabel">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:tagEntity">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="description" type="xs:string" />
+          <xs:element minOccurs="0" name="name" type="xs:string" />
+          <xs:element minOccurs="0" name="ownerId" type="xs:long" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="businessUnitsResult">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:abstractResult">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="businessunits">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="tns:businessUnit" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="businessUnit">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:businessUnitWritable">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="billingAddress" type="tns:address" />
+          <xs:element name="companyName" type="xs:string" />
+          <xs:element minOccurs="0" name="costcenters">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="0" maxOccurs="unbounded" name="item" type="xs:long" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element minOccurs="0" name="createdBy" type="xs:long" />
+          <xs:element minOccurs="0" name="customerAddress" type="tns:address" />
+          <xs:element minOccurs="0" name="customerId" type="xs:long" />
+          <xs:element minOccurs="0" name="customerName" type="xs:string" />
+          <xs:element minOccurs="0" name="functionalStatusCode" type="xs:string" />
+          <xs:element minOccurs="0" name="operatorCountryId" type="xs:long" />
+          <xs:element minOccurs="0" name="operatorCountryName" type="xs:string" />
+          <xs:element name="overallContractBinding" type="xs:long" />
+          <xs:element minOccurs="0" name="segmentCode" type="xs:string" />
+          <xs:element name="signatureDate" type="xs:dateTime" />
+          <xs:element minOccurs="0" name="simContractBinding" type="xs:long" />
+          <xs:element minOccurs="0" name="statusCode" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="simIdentifier">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ICCID" />
+      <xs:enumeration value="IMSI" />
+      <xs:enumeration value="MSISDN" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="userArray" final="#all">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="item" nillable="true" type="tns:user" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="businessUnitWritableArray" final="#all">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="item" nillable="true" type="tns:businessUnitWritable" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="createTemplateLabelArray" final="#all">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="item" nillable="true" type="tns:createTemplateLabel" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="costCenterWritableArray" final="#all">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="item" nillable="true" type="tns:costCenterWritable" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
