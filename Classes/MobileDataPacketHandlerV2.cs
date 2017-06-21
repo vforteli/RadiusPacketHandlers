@@ -62,7 +62,7 @@ namespace Flexinets.Radius
                 return response;
             }
 
-            _log.Debug($"Handling authentication packet for {msisdn} on network {msisdn}");
+            _log.Debug($"Handling authentication packet for {msisdn} on network {networkid}");
             using (var db = _contextFactory.GetContext())
             {               
                 var result = db.Authenticate1(msisdn, "flexinets", msisdn, networkid).ToList();
