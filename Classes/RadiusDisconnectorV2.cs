@@ -59,14 +59,15 @@ namespace Flexinets.Radius
                 var client = new TAGExternalAPIImplService();
                 client.Url = _apiUrl;
                 var response = client.disconnectSessions(_apiUsername, _apiPassword, simIdentifier.MSISDN, new[] { msisdn });
-                
+
+                // todo verify resultcode
                 Console.WriteLine(response.errorDescription);
                 Console.WriteLine(response.resultCode);
                 return true;
             }
             catch (Exception ex)
             {
-                _log.Fatal("Something went haywire on disconnect. Start panicking!", ex);
+                _log.Fatal($"Something went haywire disconnecting {msisdn}. Start panicking!", ex);
             }
             return false;
         }
