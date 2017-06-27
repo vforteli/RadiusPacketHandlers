@@ -1,6 +1,7 @@
 ﻿using FlexinetsDBEF;
 using log4net;
 using System;
+using System.Data.Entity.Core;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -14,7 +15,7 @@ namespace Flexinets.Radius
         private readonly ILog _log = LogManager.GetLogger(typeof(MobileDataPacketHandlerV2));
         private readonly RadiusDisconnectorV2 _disconnector;
         private readonly WelcomeSender _welcomeSender;
-        
+
 
         public MobileDataPacketHandlerV2(FlexinetsEntitiesFactory contextFactory, WelcomeSender welcomeSender, RadiusDisconnectorV2 disconnector)
         {
@@ -41,7 +42,7 @@ namespace Flexinets.Radius
             else if (packet.Code == PacketCode.AccountingRequest && packet.GetAttribute<AcctStatusType>("Acct-Status-Type") == AcctStatusType.InterimUpdate)
             {
                 return Interim(packet);
-            }            
+            }
 
             throw new InvalidOperationException($"Nothing configured for {packet.Code}");
         }
@@ -55,7 +56,7 @@ namespace Flexinets.Radius
 
             _log.Debug($"Handling authentication packet for {msisdn} on network {networkid}");
             using (var db = _contextFactory.GetContext())
-            {               
+            {
                 var result = db.Authenticate1(msisdn, "flexinets", msisdn, networkid).ToList();
                 if (result.Count > 0 && result.First() == null)
                 {
@@ -104,12 +105,28 @@ namespace Flexinets.Radius
             var acctStatusType = "Start";    // duuh
 
             _log.Debug($"Handling start packet for {msisdn} with AcctSessionId {acctSessionId}");
-            using (var db = _contextFactory.GetContext())
+
+            try
             {
-                db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, null);
+                using (var db = _contextFactory.GetContext())
+                {
+                    db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, null);
+                }
+
+                Task.Run(() => _welcomeSender.CheckWelcomeSms(msisdn));
+            }
+            catch (EntityCommandExecutionException ex)
+            {
+                if (ex.InnerException?.Message.Contains("duplicate") ?? false)
+                {
+                    _log.Warn($"Duplipcate start packet for AcctSessionId {acctSessionId}");
+                }
+                else
+                {
+                    throw;
+                }
             }
 
-            Task.Run(() => _welcomeSender.CheckWelcomeSms(msisdn));
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
         }
 
@@ -162,12 +179,25 @@ namespace Flexinets.Radius
             var acctOutputGigawords = packet.GetAttribute<UInt32?>("Acct-Output-Gigawords");
 
             _log.Debug($"Handling stop packet for {msisdn} with AcctSessionId {acctSessionId}");
-            using (var db = _contextFactory.GetContext())
+            try
             {
-                db.AccountingStop(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, acctInputOctets, acctOutputOctets,
-                    (int)acctSessionTime, acctTerminateCause.ToString(), acctInputGigawords, acctOutputGigawords);
+                using (var db = _contextFactory.GetContext())
+                {
+                    db.AccountingStop(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, acctInputOctets, acctOutputOctets,
+                        (int)acctSessionTime, acctTerminateCause.ToString(), acctInputGigawords, acctOutputGigawords);
+                }
             }
-
+            catch (EntityCommandExecutionException ex)
+            {
+                if (ex.InnerException?.Message.Contains("duplicate") ?? false)
+                {
+                    _log.Warn($"Duplipcate stop packet for AcctSessionId {acctSessionId}");
+                }
+                else
+                {
+                    throw;
+                }
+            }
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
         }
 
