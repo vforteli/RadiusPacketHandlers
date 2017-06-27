@@ -52,7 +52,7 @@ namespace Flexinets.Radius
         {
             _log.Warn("Using new mbb handler!");
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            var networkid = packet.GetAttribute<String>("3GPP-GGSN-MCC-MNC");
+            var networkid = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));           
 
             _log.Debug($"Handling authentication packet for {msisdn} on network {networkid}");
             using (var db = _contextFactory.GetContext())
@@ -119,7 +119,7 @@ namespace Flexinets.Radius
             {
                 if (ex.InnerException?.Message.Contains("duplicate") ?? false)
                 {
-                    _log.Warn($"Duplipcate start packet for AcctSessionId {acctSessionId}");
+                    _log.Warn($"Duplicate start packet for AcctSessionId {acctSessionId}");
                 }
                 else
                 {
@@ -191,7 +191,7 @@ namespace Flexinets.Radius
             {
                 if (ex.InnerException?.Message.Contains("duplicate") ?? false)
                 {
-                    _log.Warn($"Duplipcate stop packet for AcctSessionId {acctSessionId}");
+                    _log.Warn($"Duplicate stop packet for AcctSessionId {acctSessionId}");
                 }
                 else
                 {
