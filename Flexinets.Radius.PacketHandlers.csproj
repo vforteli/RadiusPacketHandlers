@@ -140,7 +140,6 @@
     <Compile Include="Classes\IDateTimeProvider.cs" />
     <Compile Include="Classes\iPassAuthenticationProxy.cs" />
     <Compile Include="Classes\iPassPacketHandler.cs" />
-    <Compile Include="Classes\iPassServerInfo.cs" />
     <Compile Include="Classes\IWebClient.cs" />
     <Compile Include="Classes\IWebClientFactory.cs" />
     <Compile Include="Classes\MobileDataPacketHandlerV2.cs" />
@@ -245,13 +244,7 @@
       <DependentUpon>Reference.map</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Classes\iPass\" />
-    <Folder Include="Classes\MobileData\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Connected Services\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <WebReferences Include="Web References\" />
   </ItemGroup>

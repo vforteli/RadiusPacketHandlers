@@ -43,33 +43,27 @@ namespace Flexinets.Radius
 
 
         /// <summary>
-        /// Send packet of disconnet
+        /// Disconnect a user by msisdn
         /// </summary>
-        /// <param name="remoteIpAddress"></param>
-        /// <param name="port"></param>
-        /// <param name="secret"></param>
-        /// <param name="acctSessionId"></param>
-        /// <param name="username">not used but needed...</param>
-        public Boolean DisconnectUserByMsisdn(String msisdn)
+        /// <param name="msisdn"></param>
+        /// <returns></returns>
+        public (Boolean success, String resultCode, String errorDescription) DisconnectUserByMsisdn(String msisdn)
         {
             try
             {
                 _log.Info($"Disconnecting msisdn {msisdn}");
-
-                var client = new TAGExternalAPIImplService();
-                client.Url = _apiUrl;
+                var client = new TAGExternalAPIImplService()
+                {
+                    Url = _apiUrl
+                };
                 var response = client.disconnectSessions(_apiUsername, _apiPassword, simIdentifier.MSISDN, new[] { msisdn });
-
-                // todo verify resultcode
-                Console.WriteLine(response.errorDescription);
-                Console.WriteLine(response.resultCode);
-                return true;
+                return (response.resultCode == "OK", response.resultCode, response.errorDescription);
             }
             catch (Exception ex)
             {
                 _log.Fatal($"Something went haywire disconnecting {msisdn}. Start panicking!", ex);
+                return (false, "fail", ex.Message);
             }
-            return false;
         }
     }
 }
