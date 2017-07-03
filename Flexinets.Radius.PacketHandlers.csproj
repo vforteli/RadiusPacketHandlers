@@ -134,31 +134,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\CacheEntry.cs" />
-    <Compile Include="Classes\DateTimeProvider.cs" />
-    <Compile Include="Classes\FailedRequestBackOffCounter.cs" />
-    <Compile Include="Classes\IDateTimeProvider.cs" />
     <Compile Include="Classes\iPassAuthenticationProxy.cs" />
     <Compile Include="Classes\iPassPacketHandler.cs" />
-    <Compile Include="Classes\IWebClient.cs" />
-    <Compile Include="Classes\IWebClientFactory.cs" />
     <Compile Include="Classes\MobileDataPacketHandlerV2.cs" />
-    <Compile Include="Classes\MobileDataPacketHandler.cs" />
-    <Compile Include="Classes\MockDateTimeProvider.cs" />
-    <Compile Include="Classes\MockWebClient.cs" />
-    <Compile Include="Classes\NetworkEntry.cs" />
-    <Compile Include="Classes\NetworkIdClient.cs" />
-    <Compile Include="Classes\NetworkIdProvider.cs" />
-    <Compile Include="Classes\NetworkProvider.cs" />
     <Compile Include="Classes\RadiusDisconnectorV2.cs" />
-    <Compile Include="Classes\RadiusDisconnector.cs" />
-    <Compile Include="Classes\WebClientFactory.cs" />
-    <Compile Include="Classes\WebClientMockFactory.cs" />
-    <Compile Include="Classes\WebClientWrapper.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="Classes\WelcomeSender.cs" />
-    <Compile Include="Classes\XmlUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\UsernameDomain.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -166,8 +146,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Tests\FailedRequestBackOffCounterTests.cs" />
-    <Compile Include="Tests\NetworkIdTests.cs" />
     <Compile Include="Web References\m2msimplify\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
