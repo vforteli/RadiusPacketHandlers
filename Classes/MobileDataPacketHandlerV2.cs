@@ -50,7 +50,6 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Authenticate(IRadiusPacket packet)
         {
-            _log.Warn("Using new mbb handler!");
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var networkid = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));           
 
@@ -98,7 +97,6 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Start(IRadiusPacket packet)
         {
-            _log.Warn("Using new mbb handler!");
             var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
@@ -133,7 +131,6 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Interim(IRadiusPacket packet)
         {
-            _log.Warn("Using new mbb handler!");
             var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
@@ -166,7 +163,6 @@ namespace Flexinets.Radius
 
         private IRadiusPacket Stop(IRadiusPacket packet)
         {
-            _log.Warn("Using new mbb handler!");
             var user = UsernameDomain.Parse(packet.GetAttribute<String>("User-Name"));
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
