@@ -51,12 +51,12 @@ namespace Flexinets.Radius
         private IRadiusPacket Authenticate(IRadiusPacket packet)
         {
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            var networkid = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));           
+            var mccmnd = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));
 
-            _log.Debug($"Handling authentication packet for {msisdn} on network {networkid}");
+            _log.Debug($"Handling authentication packet for {msisdn} on network {mccmnd}");
             using (var db = _contextFactory.GetContext())
             {
-                var result = db.Authenticate1(msisdn, "flexinets", msisdn, networkid).ToList();
+                var result = db.Authenticate1(msisdn, "flexinets", msisdn, mccmnd).ToList();
                 if (result.Count > 0 && result.First() == null)
                 {
                     var response = packet.CreateResponsePacket(PacketCode.AccessAccept);
@@ -67,7 +67,7 @@ namespace Flexinets.Radius
                 {
                     try
                     {
-                        var mccmnc = Convert.ToInt32(networkid);
+                        var mccmnc = Convert.ToInt32(mccmnd);
                         var network = db.Networks.SingleOrDefault(o => o.mccmnc == mccmnc);
                         var simcard = db.SimCards.SingleOrDefault(o => o.Msisdn == msisdn);
 
@@ -101,6 +101,7 @@ namespace Flexinets.Radius
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
             var acctStatusType = "Start";    // duuh
+            var mccmnc = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));
 
             _log.Debug($"Handling start packet for {msisdn} with AcctSessionId {acctSessionId}");
 
@@ -108,7 +109,7 @@ namespace Flexinets.Radius
             {
                 using (var db = _contextFactory.GetContext())
                 {
-                    db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, null);
+                    db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, mccmnc);
                 }
 
                 Task.Run(() => _welcomeSender.CheckWelcomeSms(msisdn));
