@@ -112,7 +112,7 @@ namespace Flexinets.Radius
                     db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, mccmnc);
                 }
 
-                Task.Run(() => _welcomeSender.CheckWelcomeSms(msisdn));
+                Task.Factory.StartNew(() => _welcomeSender.CheckWelcomeSms(msisdn), TaskCreationOptions.LongRunning);
             }
             catch (EntityCommandExecutionException ex)
             {
@@ -150,13 +150,13 @@ namespace Flexinets.Radius
                     (int)acctSessionTime, acctInputGigawords, acctOutputGigawords);
             }
 
-            Task.Run(() =>
+            Task.Factory.StartNew(() =>
             {
                 if (_disconnector.CheckDisconnect(acctSessionId))
                 {
                     _disconnector.DisconnectUserByMsisdn(msisdn);
                 }
-            });
+            }, TaskCreationOptions.LongRunning);
 
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
         }
