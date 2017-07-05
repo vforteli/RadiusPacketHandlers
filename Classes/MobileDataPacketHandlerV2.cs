@@ -142,8 +142,9 @@ namespace Flexinets.Radius
             var acctInputGigawords = packet.GetAttribute<UInt32?>("Acct-Input-Gigawords");
             var acctOutputGigawords = packet.GetAttribute<UInt32?>("Acct-Output-Gigawords");
             var nasIpAddress = packet.GetAttribute<IPAddress>("NAS-IP-Address");
+            var mccmnc = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info")).mccmnc;
 
-            _log.Debug($"Handling interim packet for {msisdn} with AcctSessionId {acctSessionId}");
+            _log.Debug($"Handling interim packet for {msisdn} on {mccmnc} with AcctSessionId {acctSessionId}");
             using (var db = _contextFactory.GetContext())
             {
                 db.AccountingInterim(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, acctInputOctets, acctOutputOctets,
