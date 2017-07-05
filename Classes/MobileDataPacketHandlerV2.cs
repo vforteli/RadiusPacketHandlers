@@ -51,12 +51,12 @@ namespace Flexinets.Radius
         private IRadiusPacket Authenticate(IRadiusPacket packet)
         {
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
-            var mccmnd = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));
+            var locationInfo = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));
 
-            _log.Debug($"Handling authentication packet for {msisdn} on network {mccmnd}");
+            _log.Debug($"Handling authentication packet for {msisdn} on network {locationInfo.locationType}:{locationInfo.mccmnc}");
             using (var db = _contextFactory.GetContext())
             {
-                var result = db.Authenticate1(msisdn, "flexinets", msisdn, mccmnd).ToList();
+                var result = db.Authenticate1(msisdn, "flexinets", msisdn, locationInfo.mccmnc).ToList();
                 if (result.Count > 0 && result.First() == null)
                 {
                     var response = packet.CreateResponsePacket(PacketCode.AccessAccept);
@@ -67,13 +67,13 @@ namespace Flexinets.Radius
                 {
                     try
                     {
-                        var mccmnc = Convert.ToInt32(mccmnd);
+                        var mccmnc = Convert.ToInt32(locationInfo.mccmnc);
                         var network = db.Networks.SingleOrDefault(o => o.mccmnc == mccmnc);
                         var simcard = db.SimCards.SingleOrDefault(o => o.Msisdn == msisdn);
 
                         var sb = new StringBuilder();
 
-                        sb.AppendLine($"Authentication failed for {msisdn} on network {mccmnc} ({network.providername}, {network.countryname})");
+                        sb.AppendLine($"Authentication failed for {msisdn} on network {mccmnc} ({network?.providername}, {network?.countryname})");
                         if (simcard.user_id == null)
                         {
                             sb.AppendLine("Sim card not mapped to a user");
@@ -101,7 +101,7 @@ namespace Flexinets.Radius
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
             var acctSessionId = packet.GetAttribute<String>("Acct-Session-Id");
             var acctStatusType = "Start";    // duuh
-            var mccmnc = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));
+            var locationInfo = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));
 
             _log.Debug($"Handling start packet for {msisdn} with AcctSessionId {acctSessionId}");
 
@@ -109,7 +109,7 @@ namespace Flexinets.Radius
             {
                 using (var db = _contextFactory.GetContext())
                 {
-                    db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, mccmnc);
+                    db.AccountingStart(user.Username, user.Domain, msisdn, acctStatusType, acctSessionId, locationInfo.mccmnc);
                 }
 
                 Task.Factory.StartNew(() => _welcomeSender.CheckWelcomeSms(msisdn), TaskCreationOptions.LongRunning);
