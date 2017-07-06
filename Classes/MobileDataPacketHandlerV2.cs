@@ -56,6 +56,11 @@ namespace Flexinets.Radius
             _log.Debug($"Handling authentication packet for {msisdn} on network {locationInfo.locationType}:{locationInfo.mccmnc}");
             using (var db = _contextFactory.GetContext())
             {
+                if (locationInfo.mccmnc == "99999")
+                {
+                    _log.Warn($"No location info for msisdn {msisdn} check m2m portal 3GPP-SGSN-Address: {packet.GetAttribute<IPAddress>("3GPP-SGSN-Address")}");
+                    return packet.CreateResponsePacket(PacketCode.AccessReject);
+                }
                 var result = db.Authenticate1(msisdn, "flexinets", msisdn, locationInfo.mccmnc).ToList();
                 if (result.Count > 0 && result.First() == null)
                 {
