@@ -2,6 +2,7 @@
 using Flexinets.Security;
 using FlexinetsDBEF;
 using log4net;
+using Microsoft.AspNet.Identity;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
@@ -69,7 +70,7 @@ namespace Flexinets.Radius
                             NASPORT = packet.GetAttribute<UInt32?>("NAS-Port"),
                             NASPORTTYPE = packet.GetAttribute<UInt32?>("NAS-Port-Type").ToString(),
                             WISPrLocationName = packet.GetAttribute<String>("WISPr-Location-Name"),
-                            temp = packet.GetAttribute<String>("Ipass-Location-Description"),                            
+                            temp = packet.GetAttribute<String>("Ipass-Location-Description"),
                             timestamp_datetime = packet.Attributes.ContainsKey("Timestamp") ? (DateTime?)DateTimeOffset.FromUnixTimeSeconds(packet.GetAttribute<Int32>("Timestamp")).UtcDateTime : DateTime.UtcNow
                         };
                         db.radiatoraccountings.Add(entry);
@@ -143,31 +144,43 @@ namespace Flexinets.Radius
         /// <returns></returns>
         private IRadiusPacket HandleAuthenticationPacket(IRadiusPacket packet)
         {
+            _log.Info($"Handling {packet.Code} packet for {packet.GetAttribute<String>("User-Name")}");
+            var usernamedomain = packet.GetAttribute<String>("User-Name").ToLowerInvariant();
+            var response = AuthenticateUser(packet);
+
+            if (response.Code == PacketCode.AccessReject)
+            {
+                _failures.Add(usernamedomain);
+            }
+            else if (response.Code == PacketCode.AccessAccept)
+            {
+                if (_failures.Contains(usernamedomain))
+                {
+                    _log.Warn($"Username {usernamedomain} authenticated after failures");
+                    _failures.Remove(usernamedomain);
+                }
+            }
+
+            return response;
+        }
+
+
+        /// <summary>
+        /// Authenticate user through proxy or locally
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
+        private IRadiusPacket AuthenticateUser(IRadiusPacket packet)
+        {
             var usernamedomain = packet.GetAttribute<String>("User-Name").ToLowerInvariant();
             var packetPassword = packet.GetAttribute<String>("User-Password");
-
-            _log.Info($"Handling {packet.Code} packet for {packet.GetAttribute<String>("User-Name")}");
 
             var proxyresponse = _authProxy.ProxyAuthentication(usernamedomain, packetPassword);
             if (proxyresponse.HasValue)
             {
                 _log.Info($"Got response from proxy for username {usernamedomain}");
-
-                // todo refactor...
-                if (proxyresponse == PacketCode.AccessReject)
-                {
-                    _failures.Add(usernamedomain);
-                }
-                else if (proxyresponse == PacketCode.AccessAccept)
-                {
-                    if (_failures.Contains(usernamedomain))
-                    {
-                        _log.Warn($"Username {usernamedomain} authenticated after failures");
-                        _failures.Remove(usernamedomain);
-                    }
-                }
                 return packet.CreateResponsePacket(proxyresponse.Value);
-            }           
+            }
             else
             {
                 using (var db = _contextFactory.GetContext())
@@ -175,16 +188,26 @@ namespace Flexinets.Radius
                     var passwordhash = db.Authenticate(usernamedomain, packetPassword).SingleOrDefault();
                     if (CryptoMethods.isValidPassword(passwordhash, packetPassword))
                     {
-                        if (_failures.Contains(usernamedomain))
+                        var hasher = new PasswordHasher();
+                        try
                         {
-                            _log.Warn($"Username {usernamedomain} authenticated after failures");
-                            _failures.Remove(usernamedomain);
+                            if (hasher.VerifyHashedPassword(passwordhash, packetPassword) == PasswordVerificationResult.Success)
+                            {
+                                // password already verified at this point...
+                            }
+                        }
+                        catch (FormatException fex)
+                        {
+                            _log.Warn("Password hash in legacy format, rehashing", fex);
+                            var username = UsernameDomain.Parse(usernamedomain);
+                            var user = db.users.SingleOrDefault(o => o.username == username.Username && o.realm == username.Domain);
+                            user.password = hasher.HashPassword(packetPassword);
+                            db.SaveChanges();
                         }
                         return packet.CreateResponsePacket(PacketCode.AccessAccept);
                     }
                     else
                     {
-                        // todo remove transition period stuff...
                         var username = UsernameDomain.Parse(usernamedomain);
                         var user = db.users.SingleOrDefault(o => o.username == username.Username && o.realm == username.Domain);
                         if (user == null)
@@ -197,7 +220,7 @@ namespace Flexinets.Radius
                         }
                         else
                         {
-                            _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters, email: {user.email}");                         
+                            _log.Warn($"Bad password for user {usernamedomain}, password is {packetPassword.Length} characters, email: {user.email}");
                         }
 
                         var location = packet.GetAttribute<String>("Ipass-Location-Description");
@@ -205,8 +228,6 @@ namespace Flexinets.Radius
                         {
                             _log.Warn($"iPass location description: {location}");
                         }
-
-                        _failures.Add(usernamedomain);
 
                         return packet.CreateResponsePacket(PacketCode.AccessReject);
                     }
