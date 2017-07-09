@@ -186,24 +186,18 @@ namespace Flexinets.Radius
                 using (var db = _contextFactory.GetContext())
                 {
                     var passwordhash = db.Authenticate(usernamedomain, packetPassword).SingleOrDefault();
-                    if (CryptoMethods.isValidPassword(passwordhash, packetPassword))
+                    var result = CryptoMethods.VerifyHashedPassword(passwordhash, packetPassword);
+                    if (result == PasswordVerificationResult.Success)
                     {
-                        var hasher = new PasswordHasher();
-                        try
-                        {
-                            if (hasher.VerifyHashedPassword(passwordhash, packetPassword) == PasswordVerificationResult.Success)
-                            {
-                                // password already verified at this point...
-                            }
-                        }
-                        catch (FormatException fex)
-                        {
-                            _log.Warn("Password hash in legacy format, rehashing", fex);
-                            var username = UsernameDomain.Parse(usernamedomain);
-                            var user = db.users.SingleOrDefault(o => o.username == username.Username && o.realm == username.Domain);
-                            user.password = hasher.HashPassword(packetPassword);
-                            db.SaveChanges();
-                        }
+                        return packet.CreateResponsePacket(PacketCode.AccessAccept);
+                    }
+                    else if (result == PasswordVerificationResult.SuccessRehashNeeded)
+                    {
+                        _log.Warn("Password hash in legacy format, rehashing");
+                        var username = UsernameDomain.Parse(usernamedomain);
+                        var user = db.users.SingleOrDefault(o => o.username == username.Username && o.realm == username.Domain);
+                        user.password = CryptoMethods.HashPassword(packetPassword);
+                        db.SaveChanges();
                         return packet.CreateResponsePacket(PacketCode.AccessAccept);
                     }
                     else
