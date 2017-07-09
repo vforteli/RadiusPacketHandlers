@@ -2,7 +2,6 @@
 using Flexinets.Security;
 using FlexinetsDBEF;
 using log4net;
-using Microsoft.AspNet.Identity;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
@@ -13,15 +12,17 @@ namespace Flexinets.Radius
     public class iPassPacketHandler : IPacketHandler
     {
         private readonly FlexinetsEntitiesFactory _contextFactory;
+        private readonly IUserAuthenticationProvider _userAuthProvider;
         private readonly ILog _log = LogManager.GetLogger(typeof(iPassPacketHandler));
         private readonly iPassAuthenticationProxy _authProxy;
         private readonly HashSet<String> _failures = new HashSet<String>();
 
 
-        public iPassPacketHandler(FlexinetsEntitiesFactory contextFactory, iPassAuthenticationProxy authProxy)
+        public iPassPacketHandler(FlexinetsEntitiesFactory contextFactory, iPassAuthenticationProxy authProxy, IUserAuthenticationProvider userAuthProvider)
         {
             _contextFactory = contextFactory;
             _authProxy = authProxy;
+            _userAuthProvider = userAuthProvider;
         }
 
 
@@ -185,24 +186,14 @@ namespace Flexinets.Radius
             {
                 using (var db = _contextFactory.GetContext())
                 {
-                    var passwordhash = db.Authenticate(usernamedomain, packetPassword).SingleOrDefault();
-                    var result = CryptoMethods.VerifyHashedPassword(passwordhash, packetPassword);
-                    if (result == PasswordVerificationResult.Success)
+                    var username = UsernameDomain.Parse(usernamedomain);
+                    var userid = _userAuthProvider.AuthenticateAsync(username.Username, username.Domain, packetPassword).Result;
+                    if (userid.HasValue)
                     {
-                        return packet.CreateResponsePacket(PacketCode.AccessAccept);
-                    }
-                    else if (result == PasswordVerificationResult.SuccessRehashNeeded)
-                    {
-                        _log.Warn("Password hash in legacy format, rehashing");
-                        var username = UsernameDomain.Parse(usernamedomain);
-                        var user = db.users.SingleOrDefault(o => o.username == username.Username && o.realm == username.Domain);
-                        user.password = CryptoMethods.HashPassword(packetPassword);
-                        db.SaveChanges();
                         return packet.CreateResponsePacket(PacketCode.AccessAccept);
                     }
                     else
                     {
-                        var username = UsernameDomain.Parse(usernamedomain);
                         var user = db.users.SingleOrDefault(o => o.username == username.Username && o.realm == username.Domain);
                         if (user == null)
                         {
