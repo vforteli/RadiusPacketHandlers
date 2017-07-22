@@ -1,9 +1,5 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Flexinets.Radius.PacketHandlers.Properties" GeneratedClassName="Settings">
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
   <Profiles />
-  <Settings>
-    <Setting Name="Flexinets_Radius_PacketHandlers_m2msimplify_TAGExternalAPIImplService" Type="(Web Service URL)" Scope="Application">
-      <Value Profile="(Default)">https://m2msimplify.telekomaustria.com:443/TAGWebServices/tagExternalAPI</Value>
-    </Setting>
-  </Settings>
+  <Settings />
 </SettingsFile>

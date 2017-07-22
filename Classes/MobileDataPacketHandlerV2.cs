@@ -1,4 +1,5 @@
-﻿using FlexinetsDBEF;
+﻿using Flexinets.Radius.Disconnector;
+using FlexinetsDBEF;
 using log4net;
 using System;
 using System.Data.Entity.Core;
@@ -158,7 +159,7 @@ namespace Flexinets.Radius
 
             Task.Factory.StartNew(() =>
             {
-                if (_disconnector.CheckDisconnect(acctSessionId))
+                if (CheckDisconnect(acctSessionId))
                 {
                     _disconnector.DisconnectUserByMsisdn(msisdn);
                 }
@@ -202,6 +203,24 @@ namespace Flexinets.Radius
                 }
             }
             return packet.CreateResponsePacket(PacketCode.AccountingResponse);
+        }
+
+
+        /// <summary>
+        /// Check if a user should be disconnected based on acctsessionid
+        /// Returns true if user should be disconnected
+        /// </summary>
+        /// <param name="acctSessionId"></param>
+        /// <returns></returns>
+        public Boolean CheckDisconnect(String acctSessionId)
+        {
+            _log.Info($"Checking disconnect for acctsessionid: {acctSessionId}");
+            using (var db = _contextFactory.GetContext())
+            {
+                var status = db.CheckDisconnect(acctSessionId).SingleOrDefault();
+                _log.Debug($"Check disconnect result for {acctSessionId}: {!status.HasValue}");
+                return !status.HasValue;
+            }
         }
 
 

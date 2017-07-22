@@ -137,7 +137,6 @@
     <Compile Include="Classes\iPassAuthenticationProxy.cs" />
     <Compile Include="Classes\iPassPacketHandler.cs" />
     <Compile Include="Classes\MobileDataPacketHandlerV2.cs" />
-    <Compile Include="Classes\RadiusDisconnectorV2.cs" />
     <Compile Include="Classes\WelcomeSender.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\UsernameDomain.cs" />
@@ -147,11 +146,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Tests\UsernameTests.cs" />
-    <Compile Include="Web References\m2msimplify\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.map</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\WebSites\FlexinetsPortal\FlexinetsAccessControl\Flexinets.Security.csproj">
@@ -161,6 +155,10 @@
     <ProjectReference Include="..\..\..\WebSites\FlexinetsPortal\FlexinetsDBEF\Flexinets.DBEF.csproj">
       <Project>{7f13e2f1-79e3-45c1-857c-e6d3cd793b22}</Project>
       <Name>Flexinets.DBEF</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Flexinets.Radius.Disconnector\Flexinets.Radius.Disconnector.csproj">
+      <Project>{afc252bd-be9f-4ab4-9c85-806071ca8be9}</Project>
+      <Name>Flexinets.Radius.Disconnector</Name>
     </ProjectReference>
     <ProjectReference Include="..\RadiusServer\RadiusServer.csproj">
       <Project>{968c479e-00e7-4d7b-b2f7-f3c26587f7f0}</Project>
@@ -176,69 +174,12 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Web References\m2msimplify\businessUnitsResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\changeServiceProfileResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\costCenterResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\customersResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\isAvailableResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\Reference.map">
-      <Generator>MSDiscoCodeGenerator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
-    <None Include="Web References\m2msimplify\requestResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\serviceProfilesResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\simOfflineInformationResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\simOnlineInformationResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\tagExternalAPI.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\m2msimplify\tagExternalAPI0.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\m2msimplify\TAGExternalAPIImplService.wsdl" />
-    <None Include="Web References\m2msimplify\templateLabelsResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\m2msimplify\usersResult.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
     <WebReferences Include="Web References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferenceUrl Include="https://m2msimplify.telekomaustria.com/TAGWebServices/tagExternalAPI%3fwsdl">
-      <UrlBehavior>Dynamic</UrlBehavior>
-      <RelPath>Web References\m2msimplify\</RelPath>
-      <UpdateFromURL>https://m2msimplify.telekomaustria.com/TAGWebServices/tagExternalAPI%3fwsdl</UpdateFromURL>
-      <ServiceLocationURL>
-      </ServiceLocationURL>
-      <CachedDynamicPropName>
-      </CachedDynamicPropName>
-      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
-      <CachedSettingsPropName>Flexinets_Radius_PacketHandlers_m2msimplify_TAGExternalAPIImplService</CachedSettingsPropName>
-    </WebReferenceUrl>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

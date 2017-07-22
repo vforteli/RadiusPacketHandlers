@@ -22,15 +22,5 @@ namespace Flexinets.Radius.PacketHandlers.Properties {
                 return defaultInstance;
             }
         }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
-        [global::System.Configuration.DefaultSettingValueAttribute("https://m2msimplify.telekomaustria.com:443/TAGWebServices/tagExternalAPI")]
-        public string Flexinets_Radius_PacketHandlers_m2msimplify_TAGExternalAPIImplService {
-            get {
-                return ((string)(this["Flexinets_Radius_PacketHandlers_m2msimplify_TAGExternalAPIImplService"]));
-            }
-        }
     }
 }
