@@ -1,4 +1,5 @@
-﻿using FlexinetsDBEF;
+﻿using Flexinets.Radius.Core;
+using FlexinetsDBEF;
 using log4net;
 using System;
 using System.Diagnostics;

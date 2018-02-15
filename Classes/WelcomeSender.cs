@@ -1,4 +1,4 @@
-﻿using Flexinets.MobileData.SMS;
+﻿using Flexinets.Core.Communication.Sms;
 using FlexinetsDBEF;
 using log4net;
 using System;

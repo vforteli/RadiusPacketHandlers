@@ -1,4 +1,5 @@
-﻿using Flexinets.Radius.Disconnector;
+﻿using Flexinets.Radius.Core;
+using Flexinets.Radius.Disconnector;
 using FlexinetsDBEF;
 using log4net;
 using System;
@@ -52,6 +53,12 @@ namespace Flexinets.Radius
         private IRadiusPacket Authenticate(IRadiusPacket packet)
         {
             var msisdn = packet.GetAttribute<String>("Calling-Station-Id");
+
+            if (!packet.Attributes.ContainsKey("3GPP-User-Location-Info"))
+            {
+                _log.Warn("Missing 3GPP-User-Location-Info in packet, ignoring");
+                return null;
+            }
             var locationInfo = Utils.GetMccMncFrom3GPPLocationInfo(packet.GetAttribute<Byte[]>("3GPP-User-Location-Info"));
 
             _log.Debug($"Handling authentication packet for {msisdn} on network {locationInfo.locationType}:{locationInfo.mccmnc}");

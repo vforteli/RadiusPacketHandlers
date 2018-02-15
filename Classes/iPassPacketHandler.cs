@@ -1,4 +1,5 @@
-﻿using Flexinets.Radius.PacketHandlers;
+﻿using Flexinets.Radius.Core;
+using Flexinets.Radius.PacketHandlers;
 using Flexinets.Security;
 using FlexinetsDBEF;
 using log4net;
