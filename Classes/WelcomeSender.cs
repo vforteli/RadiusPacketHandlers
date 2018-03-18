@@ -117,7 +117,7 @@ namespace Flexinets.Radius
             }
 
 
-            var smsid = _smsGateway.SendSms(template, user.phonenumber);
+            var smsid = _smsGateway.SendSmsAsync(template, user.phonenumber).Result;
 
             _log.Info($"Sent sms with id: {smsid} to {user.phonenumber}");
         }

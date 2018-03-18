@@ -95,7 +95,7 @@ namespace Flexinets.Radius
                         {
                             sb.AppendLine($"User: {simcard.UserSetting.user.username}@{simcard.UserSetting.user.realm}, group: {simcard.UserSetting.user.directory.name}");
                         }
-                        _log.Info(sb.ToString().Trim()); // todo needs throttling to reduce unwanted spam
+                        _log.Warn(sb.ToString().Trim()); // todo needs throttling to reduce unwanted spam
                     }
                     catch (Exception ex)
                     {
